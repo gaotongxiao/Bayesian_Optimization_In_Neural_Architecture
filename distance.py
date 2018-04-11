@@ -1,7 +1,7 @@
 import networkx as nx
 import numpy as np
 
-def getDistance(graph):
+def getPathLength(graph):
   '''
   Compute path length
 
@@ -68,5 +68,5 @@ print(list(G.predecessors(2)))
 print(G.nodes[1])
 print(list(G.successors(1)))
 print(list(nx.topological_sort(G)))
-print(getDistance(G))
+print(getPathLength(G))
 '''
