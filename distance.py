@@ -1,7 +1,9 @@
 import networkx as nx
 import numpy as np
+import layer_graph as lg
+from layer_graph import layers
 
-def getPathLength(graph):
+def get_path_length(graph):
   '''
   Compute path length
 
@@ -49,6 +51,32 @@ def getPathLength(graph):
     lp_op[node] = 1 + np.max(data)
 
   return rw_ip, sp_ip, lp_ip, rw_op, sp_op, lp_op
+
+def get_lmm_matrix(g1, g2):
+    
+    def symmetrize(mat):
+        '''
+            Abandon lower triangle
+        '''
+        M = np.triu(mat)
+        return M + M.T
+    '''
+    Construct cost matrix
+    When indexing M by enum type, remember minus it by 1 (enum starts from 1)
+    '''
+    M = np.ones((lg.layers_type_num, lg.layers_type_num)) * 3 # Inf should be any value larger than 2
+    np.fill_diagonal(M, 0)
+    M[layers.conv3.value - 1, layers.conv5.value - 1] = 0.2
+    M[layers.conv3.value - 1, layers.conv7.value - 1] = 0.3
+    M[layers.conv5.value - 1, layers.conv7.value - 1] = 0.2
+    M[layers.maxpool.value - 1, layers.avgpool.value - 1] = 0.25
+    M = symmetrize(M)
+    #Construct penality matrix
+    C = np.zeros((g1.get_num_layers(), g2.get_num_layers()))
+    for c1, n1 in enumerate(g1.get_nodes()):
+        for c2, n2 in enumerate(g2.get_nodes()):
+            C[c1, c2] = M[g1.get_node_attr(n1).value - 1, g2.get_node_attr(n2).value - 1]
+    return symmetrize(C)
 
 '''
 G = nx.DiGraph()
