@@ -103,19 +103,26 @@ def get_nas_matrix(g1, g2):
 
 def get_str_matrix(g1, g2):
     C = np.zeros((g1.get_num_layers() + 1, g2.get_num_layers() + 1))
+    special_layers = [[layers.conv3, layers.conv5, layers.conv7], [layers.maxpool, layers.avgpool], \
+                       [layers.fc]]
     pl_1 = get_path_length(g1)
     pl_2 = get_path_length(g2)
-    # for a in pl_1.values():
-    #     print(a)
-    # for a in pl_2.values():
-    #     print(a)
     for c1, n1 in enumerate(g1.get_nodes()):
         for c2, n2 in enumerate(g2.get_nodes()):
             C[c1, c2] = abs(pl_1[c1] - pl_2[c2])
+            for sl in special_layers:
+                a = 0
+                b = 0
+                if g1.get_node_attr(n1) in sl:
+                    a = pl_1[c1]
+                if g2.get_node_attr(n2) in sl:
+                    b = pl_2[c2]
+                C[c1, c2] += abs(a - b)
+    C /= 1 + len(special_layers)
     return C
     
-def get_distance(g1, g2):
-    C = get_lmm_matrix(g1, g2) + get_nas_matrix(g1, g2) + get_str_matrix(g1, g2)
+def get_distance(g1, g2, v_str=0.5):
+    C = get_lmm_matrix(g1, g2) + get_nas_matrix(g1, g2) + v_str * get_str_matrix(g1, g2)
     y1 = np.zeros((g1.get_num_layers() + 1))
     y2 = np.zeros((g2.get_num_layers() + 1))
     for i, node in enumerate(g1.get_nodes()):
@@ -127,19 +134,18 @@ def get_distance(g1, g2):
     return ot.emd2(y1, y2, C)
 
 if __name__ == '__main__':
-    G = layer_graph(1)
+    G = lg.layer_graph(235)
     G.add_node(layers.ip)
     G.add_node(layers.conv3, 16)
     G.add_node(layers.conv3, 16)
+    G.add_node(layers.conv3, 32)
     G.add_node(layers.conv5, 32)
-    G.add_node(layers.conv3, 32)
-    G.add_node(layers.conv3, 32)
-    G.add_node(layers.conv7, 32)
+    G.add_node(layers.maxpool)
+    G.add_node(layers.fc, 16)
     G.add_node(layers.softmax)
     G.add_node(layers.op)
     G.add_edge(0, 1)
-    G.add_edge(0, 2)
-    G.add_edge(1, 3)
+    G.add_edge(1, 2)
     G.add_edge(2, 3)
     G.add_edge(3, 4)
     G.add_edge(4, 5)
@@ -147,14 +153,64 @@ if __name__ == '__main__':
     G.add_edge(6, 7)
     G.add_edge(7, 8)
     G.update_lm()
-    G1 = layer_graph(1)
+    G1 = lg.layer_graph(1)
     G1.add_node(layers.ip)
-    G1.add_node(layers.conv3, 32)
+    G1.add_node(layers.conv3, 16)
+    G1.add_node(layers.conv3, 16)
+    G1.add_node(layers.conv3, 16)
+    G1.add_node(layers.conv3, 16)
+    G1.add_node(layers.conv5, 32)
+    G1.add_node(layers.maxpool)
+    G1.add_node(layers.fc, 16)
     G1.add_node(layers.softmax)
     G1.add_node(layers.op)
     G1.add_edge(0, 1)
     G1.add_edge(1, 2)
-    G1.add_edge(2, 3)
+    G1.add_edge(2, 4)
+    G1.add_edge(1, 3)
+    G1.add_edge(3, 5)
+    G1.add_edge(4, 5)
+    G1.add_edge(5, 6)
+    G1.add_edge(6, 7)
+    G1.add_edge(7, 8)
+    G1.add_edge(8, 9)
     G1.update_lm()
+    G2 = lg.layer_graph(1)
+    G2.add_node(layers.ip)
+    G2.add_node(layers.conv7, 16)
+    G2.add_node(layers.conv5, 32)
+    G2.add_node(layers.conv3, 16)
+    G2.add_node(layers.conv3, 16)
+    G2.add_node(layers.avgpool)
+    G2.add_node(layers.maxpool)
+    G2.add_node(layers.maxpool)
+    G2.add_node(layers.fc, 16)
+    G2.add_node(layers.conv3, 16)
+    G2.add_node(layers.softmax)
+    G2.add_node(layers.maxpool)
+    G2.add_node(layers.fc, 16)
+    G2.add_node(layers.softmax)
+    G2.add_node(layers.op)
+    G2.add_edge(0, 1)
+    G2.add_edge(1, 2)
+    G2.add_edge(2, 5)
+    G2.add_edge(5, 8)
+    G2.add_edge(8, 10)
+    G2.add_edge(8, 13)
+    G2.add_edge(10, 14)
+    G2.add_edge(13, 14)
+    G2.add_edge(1, 3)
+    G2.add_edge(3, 6)
+    G2.add_edge(6, 12)
+    G2.add_edge(12, 13)
+    G2.add_edge(1, 4)
+    G2.add_edge(4, 7)
+    G2.add_edge(7, 9)
+    G2.add_edge(9, 11)
+    G2.add_edge(11, 12)
+    G2.update_lm()
     import distance
     print(distance.get_distance(G, G1))
+    print(distance.get_distance(G1, G, 1))
+    print(distance.get_distance(G, G2))
+    print(distance.get_distance(G1, G2))

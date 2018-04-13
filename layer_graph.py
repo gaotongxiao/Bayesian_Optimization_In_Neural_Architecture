@@ -54,9 +54,7 @@ class layer_graph(object):
                 total_filters = 0
                 for n in self._graph.predecessors(node):
                     total_filters += self._graph.node[n]['num_of_filters']
-                k = 1
-                if self._graph.node[node]['type'] == layers.fc:
-                    k = 0.1
+                k = 0.1 if self._graph.node[node]['type'] == layers.fc else 1
                 self._graph.node[node]['layer_mass'] = k * total_filters * self._graph.node[node]['num_of_filters']
                 pl_lm += self._graph.node[node]['layer_mass']
         self.total_lm  = pl_lm
