@@ -25,6 +25,11 @@ class layer_graph(object):
     
     def add_edge(self, f, t):
         self._graph.add_edge(f, t)
+
+    def append(self, type, num_of_filters=1, append_to=None):
+        if append_to is None:
+            append_to = self.layer_count - 1
+        self.add_edge(append_to, self.add_node(type, num_of_filters))
     
     def get_node_attr(self, n, attr='type'):
         return self._graph.node[n][attr]
