@@ -175,3 +175,4 @@ class pool(object):
 
 if __name__ == '__main__':
     P = pool()
+    P.pool[0].show_graph()

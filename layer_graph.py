@@ -1,5 +1,7 @@
 import networkx as nx
 from enum import Enum
+import matplotlib.pyplot as plt
+import random
 
 layers_type_num = 9
 layers = Enum('layers', ('conv3', 'conv5', 'conv7', 'maxpool', 'avgpool', 'fc', 'ip', 'op', 'softmax'))
@@ -69,12 +71,31 @@ class layer_graph(object):
         for node in dl:
             self._graph.node[node]['layer_mass'] = zeta2 * pl_lm / len(dl)
             self.total_lm += self._graph.node[node]['layer_mass']
-    
+
     def get_num_layers(self):
         return self.layer_count
     
     def get_total_mass(self):
         return self.total_lm
-            
+
+    def show_graph(self, node_size=1000):
+        plt.subplot(121)
+        labels = {}
+        for n, t in self._graph.nodes(data=True):
+            labels[n] = str(t['type']) + ' ' + str(t['stride']) + ' ' + str(t['num_of_filters'])
+        nx.draw_kamada_kawai(self._graph, labels=labels, node_size=node_size)
+        plt.show()
+
+    def mut_skip(self):
+        pass
+
+    def mut_swap_label(self):
+        node = random.randint(1, self.layer_count-1)
+        while self.get_node_attr(node) in [layers.ip, layers.op, layers.softmax]:
+            node = random.randint(1, self.layer_count-1)
         
+
+    
+    def mut_wedge_layer(self):
+        pass
             
