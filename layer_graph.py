@@ -1,5 +1,6 @@
 import networkx as nx
 from enum import Enum
+import matplotlib.pyplot as plt
 import random
 
 layers_type_num = 9
@@ -70,13 +71,12 @@ class layer_graph(object):
         for node in dl:
             self._graph.node[node]['layer_mass'] = zeta2 * pl_lm / len(dl)
             self.total_lm += self._graph.node[node]['layer_mass']
-    
+
     def get_num_layers(self):
         return self.layer_count
     
     def get_total_mass(self):
         return self.total_lm
-
 
     def processing_nodes(self):
         '''
@@ -84,17 +84,18 @@ class layer_graph(object):
         '''
 
         def is_processing_node(node):
-            return node['type'] in ['conv3', 'conv5', 'conv7', 'maxpool', 'avgpool', 'fc']
+            return node['type'] in [layers.conv3, layers.conv5, layers.conv7, layers.maxpool, layers.avgpool, layers.fc]
 
         ret = []
-        for idx, node in enumerate(self.get_graph().nodes):
+        for idx in self.get_graph().nodes:
+            node = self.get_graph().nodes[idx]
             if is_processing_node(node):
-                ret.append(idx, node)
+                ret.append((idx, node))
 
         return ret
 
     def mut_alt_single(self, portion):
-        random_idx, random_node = random.choice(self.is_processing_node())
+        random_idx, random_node = random.choice(self.processing_nodes())
         num_of_filters = random_node['num_of_filters']
         self.get_graph().nodes[random_idx]['num_of_filters'] = int(num_of_filters*(1+portion))
 
@@ -107,11 +108,11 @@ class layer_graph(object):
     def mut_alt_en_masse(self, portion):
         num_of_nodes = len(self.processing_nodes())
         rate = 1 + portion
-        if  num_of_nodes > 8:
+        if num_of_nodes > 8:
             for random_idx, random_node in random.sample(self.processing_nodes(), int(num_of_nodes/8)):
                 num_of_filters = random_node['num_of_filters']
                 self.get_graph().nodes[random_idx]['num_of_filters'] = int(num_of_filters*rate)
-        else if num_of_nodes > 4:
+        elif num_of_nodes > 4:
             for random_idx, random_node in random.sample(self.processing_nodes(), int(num_of_nodes/4)):
                 num_of_filters = random_node['num_of_filters']
                 self.get_graph().nodes[random_idx]['num_of_filters'] = int(num_of_filters*rate)
@@ -126,6 +127,22 @@ class layer_graph(object):
     def mut_inc_en_masse(self):
         self.mut_alt_en_masse(1/8)
 
+    def show_graph(self, node_size=1000):
+        plt.figure()
+        labels = {}
+        for n, t in self._graph.nodes(data=True):
+            labels[n] = str(t['type']) + ' ' + str(t['stride']) + ' ' + str(t['num_of_filters'])
+        nx.draw_kamada_kawai(self._graph, labels=labels, node_size=node_size)
+        # plt.show()
 
-        
+    def mut_skip(self):
+        pass
+
+    def mut_swap_label(self):
+        node = random.randint(1, self.layer_count-1)
+        while self.get_node_attr(node) in [layers.ip, layers.op, layers.softmax]:
+            node = random.randint(1, self.layer_count-1)
+    
+    def mut_wedge_layer(self):
+        pass
             
