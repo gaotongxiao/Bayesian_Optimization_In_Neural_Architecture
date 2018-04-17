@@ -1,5 +1,9 @@
 import networkx as nx
 from enum import Enum
+<<<<<<< HEAD
+=======
+import matplotlib.pyplot as plt
+>>>>>>> 97d1f22342383bed0a9bd07f35e7ddcb0e5078f9
 import random
 
 layers_type_num = 9
@@ -93,4 +97,11 @@ class layer_graph(object):
         if not one_parent and not one_child:
             self._graph.remove_node(nodes[pick])
         if one_parent:
-            
+
+    def show_graph(self, node_size=1000):
+        plt.subplot(121)
+        labels = {}
+        for n, t in self._graph.nodes(data=True):
+            labels[n] = str(t['type']) + ' ' + str(t['stride']) + ' ' + str(t['num_of_filters'])
+        nx.draw_kamada_kawai(self._graph, labels=labels, node_size=node_size)
+        plt.show()
