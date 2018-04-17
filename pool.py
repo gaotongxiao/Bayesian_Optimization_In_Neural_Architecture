@@ -178,7 +178,7 @@ if __name__ == '__main__':
     P = pool()
     mut_pool = P.pool[0]
     mut_pool.show_graph()
-    mut_pool.mut_dec_single()
+    mut_pool.mut_dec_en_masse()
     # node = mut_pool.get_graph().nodes[3]
     # print(type(node), node['num_of_filters'])
     # node['num_of_filters']= 1111

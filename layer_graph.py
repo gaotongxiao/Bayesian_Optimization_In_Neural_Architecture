@@ -42,6 +42,9 @@ class layer_graph(object):
     def get_nodes(self):
         return nx.topological_sort(self._graph)
 
+    def get_node(self, idx):
+        return self.get_graph().nodes[idx]
+
     def update_lm(self, zeta1=0.1, zeta2=0.1):
         '''
         Args:
@@ -80,24 +83,18 @@ class layer_graph(object):
 
     def processing_nodes(self):
         '''
-        Return list of tuples, (idx, node)
+        Return list of node idx
         '''
 
-        def is_processing_node(node):
-            return node['type'] in [layers.conv3, layers.conv5, layers.conv7, layers.maxpool, layers.avgpool, layers.fc]
+        def is_processing_node(node_idx):
+            return self.get_node(node_idx)['type'] in [layers.conv3, layers.conv5, layers.conv7, layers.maxpool, layers.avgpool, layers.fc]
 
-        ret = []
-        for idx in self.get_graph().nodes:
-            node = self.get_graph().nodes[idx]
-            if is_processing_node(node):
-                ret.append((idx, node))
-
-        return ret
+        return [node_idx for node_idx in self.get_graph().nodes if is_processing_node(node_idx)]
 
     def mut_alt_single(self, portion):
-        random_idx, random_node = random.choice(self.processing_nodes())
+        random_node = self.get_node(random.choice(self.processing_nodes()))
         num_of_filters = random_node['num_of_filters']
-        self.get_graph().nodes[random_idx]['num_of_filters'] = int(num_of_filters*(1+portion))
+        random_node['num_of_filters'] = int(num_of_filters*(1+portion))
 
     def mut_dec_single(self):
         self.mut_alt_single(-1/8)
@@ -109,17 +106,15 @@ class layer_graph(object):
         num_of_nodes = len(self.processing_nodes())
         rate = 1 + portion
         if num_of_nodes > 8:
-            for random_idx, random_node in random.sample(self.processing_nodes(), int(num_of_nodes/8)):
-                num_of_filters = random_node['num_of_filters']
-                self.get_graph().nodes[random_idx]['num_of_filters'] = int(num_of_filters*rate)
+            num_of_mut = int(num_of_nodes/8)
         elif num_of_nodes > 4:
-            for random_idx, random_node in random.sample(self.processing_nodes(), int(num_of_nodes/4)):
-                num_of_filters = random_node['num_of_filters']
-                self.get_graph().nodes[random_idx]['num_of_filters'] = int(num_of_filters*rate)
-        else:
-            for random_idx, random_node in random.sample(self.processing_nodes(), int(num_of_nodes/2)):
-                num_of_filters = random_node['num_of_filters']
-                self.get_graph().nodes[random_idx]['num_of_filters'] = int(num_of_filters*rate)
+            num_of_mut = int(num_of_nodes/4)
+        else :
+            num_of_mut = int(num_of_nodes/2)
+        for random_node_idx in random.sample(self.processing_nodes(), int(num_of_mut)):
+            random_node = self.get_node(random_node_idx)
+            num_of_filters = random_node['num_of_filters']
+            random_node['num_of_filters'] = int(num_of_filters*rate)
 
     def mut_dec_en_masse(self):
         self.mut_alt_en_masse(-1/8)
