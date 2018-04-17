@@ -14,22 +14,22 @@ class layer_graph(object):
         self.input_unit = input_unit
         self.total_lm = 0
     
-    def add_node(self, type, num_of_filters=1):
+    def add_node(self, type, num_of_filters=1, stride=2):
         '''
         Return:
             node number
         '''
-        self._graph.add_node(self.layer_count, type=type, num_of_filters=num_of_filters, layer_mass=0)
+        self._graph.add_node(self.layer_count, type=type, num_of_filters=num_of_filters, layer_mass=0, stride=stride)
         self.layer_count += 1
         return self.layer_count - 1
     
     def add_edge(self, f, t):
         self._graph.add_edge(f, t)
 
-    def append(self, type, num_of_filters=1, append_to=None):
+    def append(self, type, num_of_filters=1, stride=2, append_to=None):
         if append_to is None:
             append_to = self.layer_count - 1
-        self.add_edge(append_to, self.add_node(type, num_of_filters))
+        self.add_edge(append_to, self.add_node(type, num_of_filters, stride))
     
     def get_node_attr(self, n, attr='type'):
         return self._graph.node[n][attr]
