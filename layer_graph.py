@@ -1,5 +1,6 @@
 import networkx as nx
 from enum import Enum
+import random
 
 layers_type_num = 9
 layers = Enum('layers', ('conv3', 'conv5', 'conv7', 'maxpool', 'avgpool', 'fc', 'ip', 'op', 'softmax'))
@@ -76,11 +77,20 @@ class layer_graph(object):
     def get_total_mass(self):
         return self.total_lm
 
-    def inc_en_masse(self):
+    def mut_dup_path(self):
         #king
 
-    def dup_path(self):
+    def mut_remove_layer(self):
         #king
-
-    def remove_layer(self):
-        #king
+        pick = random.randint(0, self.layer_count-1)
+        nodes = self.get_nodes()
+        one_parent = False
+        one_child = False
+        if self._graph.predecessors(nodes[pick]) == 1:
+            one_parent = True
+        if self._graph.successors(nodes[pick]) == 1:
+            one_child = True
+        if not one_parent and not one_child:
+            self._graph.remove_node(nodes[pick])
+        if one_parent:
+            
