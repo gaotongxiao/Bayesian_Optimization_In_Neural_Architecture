@@ -1,5 +1,6 @@
 import networkx as nx
 from enum import Enum
+import random
 
 layers_type_num = 9
 layers = Enum('layers', ('conv3', 'conv5', 'conv7', 'maxpool', 'avgpool', 'fc', 'ip', 'op', 'softmax'))
@@ -75,6 +76,56 @@ class layer_graph(object):
     
     def get_total_mass(self):
         return self.total_lm
-            
+
+
+    def processing_nodes(self):
+        '''
+        Return list of tuples, (idx, node)
+        '''
+
+        def is_processing_node(node):
+            return node['type'] in ['conv3', 'conv5', 'conv7', 'maxpool', 'avgpool', 'fc']
+
+        ret = []
+        for idx, node in enumerate(self.get_graph().nodes):
+            if is_processing_node(node):
+                ret.append(idx, node)
+
+        return ret
+
+    def mut_alt_single(self, portion):
+        random_idx, random_node = random.choice(self.is_processing_node())
+        num_of_filters = random_node['num_of_filters']
+        self.get_graph().nodes[random_idx]['num_of_filters'] = int(num_of_filters*(1+portion))
+
+    def mut_dec_single(self):
+        self.mut_alt_single(-1/8)
+
+    def mut_inc_single(self):
+        self.mut_alt_single(1/8)
+
+    def mut_alt_en_masse(self, portion):
+        num_of_nodes = len(self.processing_nodes())
+        rate = 1 + portion
+        if  num_of_nodes > 8:
+            for random_idx, random_node in random.sample(self.processing_nodes(), int(num_of_nodes/8)):
+                num_of_filters = random_node['num_of_filters']
+                self.get_graph().nodes[random_idx]['num_of_filters'] = int(num_of_filters*rate)
+        else if num_of_nodes > 4:
+            for random_idx, random_node in random.sample(self.processing_nodes(), int(num_of_nodes/4)):
+                num_of_filters = random_node['num_of_filters']
+                self.get_graph().nodes[random_idx]['num_of_filters'] = int(num_of_filters*rate)
+        else:
+            for random_idx, random_node in random.sample(self.processing_nodes(), int(num_of_nodes/2)):
+                num_of_filters = random_node['num_of_filters']
+                self.get_graph().nodes[random_idx]['num_of_filters'] = int(num_of_filters*rate)
+
+    def mut_dec_en_masse(self):
+        self.mut_alt_en_masse(-1/8)
+
+    def mut_inc_en_masse(self):
+        self.mut_alt_en_masse(1/8)
+
+
         
             
