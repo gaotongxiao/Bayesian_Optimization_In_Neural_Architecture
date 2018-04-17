@@ -13,7 +13,7 @@ class layer_graph(object):
         self.layer_count = 0
         self.input_unit = input_unit
         self.total_lm = 0
-    
+
     def add_node(self, type, num_of_filters=1, stride=2):
         '''
         Return:
@@ -22,7 +22,7 @@ class layer_graph(object):
         self._graph.add_node(self.layer_count, type=type, num_of_filters=num_of_filters, layer_mass=0, stride=stride)
         self.layer_count += 1
         return self.layer_count - 1
-    
+
     def add_edge(self, f, t):
         self._graph.add_edge(f, t)
 
@@ -30,10 +30,10 @@ class layer_graph(object):
         if append_to is None:
             append_to = self.layer_count - 1
         self.add_edge(append_to, self.add_node(type, num_of_filters, stride))
-    
+
     def get_node_attr(self, n, attr='type'):
         return self._graph.node[n][attr]
-    
+
     def get_graph(self):
         return self._graph
 
@@ -69,12 +69,18 @@ class layer_graph(object):
         for node in dl:
             self._graph.node[node]['layer_mass'] = zeta2 * pl_lm / len(dl)
             self.total_lm += self._graph.node[node]['layer_mass']
-    
+
     def get_num_layers(self):
         return self.layer_count
-    
+
     def get_total_mass(self):
         return self.total_lm
-            
-        
-            
+
+    def inc_en_masse(self):
+        #king
+
+    def dup_path(self):
+        #king
+
+    def remove_layer(self):
+        #king
