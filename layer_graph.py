@@ -1,9 +1,6 @@
 import networkx as nx
 from enum import Enum
-<<<<<<< HEAD
-=======
 import matplotlib.pyplot as plt
->>>>>>> 97d1f22342383bed0a9bd07f35e7ddcb0e5078f9
 import random
 
 layers_type_num = 9
