@@ -2,6 +2,7 @@ import networkx as nx
 from enum import Enum
 import matplotlib.pyplot as plt
 import random
+import numpy as np
 
 layers_type_num = 9
 layers = Enum('layers', ('conv3', 'conv5', 'conv7', 'maxpool', 'avgpool', 'fc', 'ip', 'op', 'softmax'))
@@ -15,6 +16,11 @@ class layer_graph(object):
         self.layer_count = 0
         self.input_unit = input_unit
         self.total_lm = 0
+        self.conv_layers = [layers.conv3, layers.conv5, layers.conv7]
+        self.pool_layers = [layers.maxpool, layers.avgpool]
+        self.process_layers = [*self.conv_layers, *self.pool_layers, layers.fc]
+        self.decision_layers = [layers.softmax]
+        self.iop_layers = [layers.ip, layers.op]
     
     def add_node(self, type, num_of_filters=1, stride=2):
         '''
@@ -31,7 +37,9 @@ class layer_graph(object):
     def append(self, type, num_of_filters=1, stride=2, append_to=None):
         if append_to is None:
             append_to = self.layer_count - 1
-        self.add_edge(append_to, self.add_node(type, num_of_filters, stride))
+        new_node = self.add_node(type, num_of_filters, stride)
+        self.add_edge(append_to, new_node)
+        return new_node
     
     def get_node_attr(self, n, attr='type'):
         return self._graph.node[n][attr]
@@ -53,9 +61,9 @@ class layer_graph(object):
         dl = []
         pl_lm = 0
         for node in nodes:
-            if self._graph.node[node]['type'] == layers.ip or self._graph.node[node]['type'] == layers.op:
+            if self.get_node_attr(node) in self.iop_layers:
                 ipop.append(node)
-            elif self._graph.node[node]['type'] == layers.softmax:
+            elif self.get_node_attr(node) in self.decision_layers:
                 dl.append(node)
             else:
                 total_filters = 0
@@ -87,15 +95,80 @@ class layer_graph(object):
         plt.show()
 
     def mut_skip(self):
-        pass
+        def random_pick():
+            A = random.randint(1, self.layer_count-1)
+            while self.get_node_attr(A) not in self.process_layers:
+                A = random.randint(1, self.layer_count-1)
+            B = random.randint(1, self.layer_count-1)
+            while self.get_node_attr(B) not in self.process_layers:
+                B = random.randint(1, self.layer_count-1)
+            for n in self.get_nodes():
+                if A == n:
+                    break
+                if B == n:
+                    B = A
+                    A = n
+                    break
+            return [A, B]
+        i = 0
+        nodes = random_pick()
+        while self._graph.has_edge(*nodes) and i < 20:
+            i += 1
+            nodes = random_pick()
+        path = nx.shortest_path(self._graph, source=nodes[0], target=nodes[1])
+        pool_counter = 0
+        for node in path[1:-1]:
+            if self.get_node_attr(node) in self.pool_layers:
+                pool_counter += 1
+        while pool_counter != 0:
+            nodes[0] = self.append(layers.avgpool, append_to=nodes[0])
+            pool_counter -= 1
+        self.add_edge(nodes[0], nodes[1])
+        
 
     def mut_swap_label(self):
+        '''
+        Can I pick softmax or change to softmax?
+        '''
         node = random.randint(1, self.layer_count-1)
-        while self.get_node_attr(node) in [layers.ip, layers.op, layers.softmax]:
+        while self.get_node_attr(node) not in self.process_layers:
             node = random.randint(1, self.layer_count-1)
-        
+        layers_list = list(layers)
+        type = random.choice(layers_list)
+        while type not in self.process_layers:
+            type = random.choice(layers_list)
+        if type in [*self.conv_layers, layers.fc]:
+            num_of_filters = np.random.choice([64, 128, 256, 512], 1, p=[0.4, 0.3, 0.2, 0.1])[0]
+            stride = random.choice([1, 2]) if type != layers.fc else 2
+        else:
+            num_of_filters = 1
+            stride = 2
+        self._graph.node[node]['stride'] = stride
+        self._graph.node[node]['num_of_filters'] = num_of_filters
+        self._graph.node[node]['type'] = type
 
     
     def mut_wedge_layer(self):
-        pass
-            
+        edges = self._graph.edges()
+        edge = random.choice(list(edges))
+        while self.get_node_attr(edge[0]) not in self.process_layers and self.get_node_attr(edge[1]) not in self.process_layers:
+            edge = random.choice(list(edges))
+        print("hi")
+        layers_list = list(layers)
+        type = random.choice(layers_list)
+        while type not in self.process_layers:
+            type = random.choice(layers_list)
+        if type in [*self.conv_layers, layers.fc]:
+            num_of_filters = int((self.get_node_attr(
+                edge[0], 'num_of_filters') + self.get_node_attr(edge[1], 'num_of_filters')) / 2)
+            if num_of_filters % 2: num_of_filters += 1
+            if num_of_filters < 16:
+                num_of_filters = np.random.choice([64, 128, 256, 512], 1, p=[0.4, 0.3, 0.2, 0.1])[0]
+            stride = random.choice([1, 2]) if type != layers.fc else 2
+        else:
+            num_of_filters = 1
+            stride = 2
+        self._graph.remove_edge(*edge)
+        new_node = self.append(type, num_of_filters, stride, edge[0])
+        self.add_edge(new_node, edge[1])
+        

@@ -22,6 +22,7 @@ class pool(object):
         G.append(layers.maxpool)
         G.append(layers.fc, 128)
         G.append(layers.fc, 256)
+        G.append(layers.fc, 512)
         G.append(layers.softmax)
         G.append(layers.op)
         G.update_lm()
@@ -175,4 +176,3 @@ class pool(object):
 
 if __name__ == '__main__':
     P = pool()
-    P.pool[0].show_graph()
