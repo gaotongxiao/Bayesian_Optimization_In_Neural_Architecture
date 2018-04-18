@@ -198,7 +198,6 @@ class layer_graph(object):
         edge = random.choice(list(edges))
         while self.get_node_attr(edge[0]) not in self.process_layers and self.get_node_attr(edge[1]) not in self.process_layers:
             edge = random.choice(list(edges))
-        print("hi")
         layers_list = list(layers)
         type = random.choice(layers_list)
         while type not in self.process_layers:
