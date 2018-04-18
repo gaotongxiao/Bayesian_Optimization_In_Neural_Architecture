@@ -50,6 +50,9 @@ class layer_graph(object):
     def get_nodes(self):
         return nx.topological_sort(self._graph)
 
+    def get_node(self, idx):
+        return self.get_graph().nodes[idx]
+
     def update_lm(self, zeta1=0.1, zeta2=0.1):
         '''
         Args:
@@ -86,13 +89,54 @@ class layer_graph(object):
     def get_total_mass(self):
         return self.total_lm
 
+    def processing_nodes(self):
+        '''
+        Return list of node idx
+        '''
+
+        def is_processing_node(node_idx):
+            return self.get_node(node_idx)['type'] in self.process_layers
+
+        return [node_idx for node_idx in self.get_graph().nodes if is_processing_node(node_idx)]
+
+    def mut_alt_single(self, portion):
+        random_node = self.get_node(random.choice(self.processing_nodes()))
+        num_of_filters = random_node['num_of_filters']
+        random_node['num_of_filters'] = int(num_of_filters*(1+portion))
+
+    def mut_dec_single(self):
+        self.mut_alt_single(-1/8)
+
+    def mut_inc_single(self):
+        self.mut_alt_single(1/8)
+
+    def mut_alt_en_masse(self, portion):
+        num_of_nodes = len(self.processing_nodes())
+        rate = 1 + portion
+        if num_of_nodes > 8:
+            num_of_mut = int(num_of_nodes/8)
+        elif num_of_nodes > 4:
+            num_of_mut = int(num_of_nodes/4)
+        else :
+            num_of_mut = int(num_of_nodes/2)
+        for random_node_idx in random.sample(self.processing_nodes(), int(num_of_mut)):
+            random_node = self.get_node(random_node_idx)
+            num_of_filters = random_node['num_of_filters']
+            random_node['num_of_filters'] = int(num_of_filters*rate)
+
+    def mut_dec_en_masse(self):
+        self.mut_alt_en_masse(-1/8)
+
+    def mut_inc_en_masse(self):
+        self.mut_alt_en_masse(1/8)
+
     def show_graph(self, node_size=1000):
-        plt.subplot(121)
+        plt.figure()
         labels = {}
         for n, t in self._graph.nodes(data=True):
             labels[n] = str(t['type']) + ' ' + str(t['stride']) + ' ' + str(t['num_of_filters'])
         nx.draw_kamada_kawai(self._graph, labels=labels, node_size=node_size)
-        plt.show()
+        # plt.show()
 
     def mut_skip(self):
         def random_pick():
