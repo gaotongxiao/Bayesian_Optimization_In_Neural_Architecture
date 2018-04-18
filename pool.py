@@ -1,5 +1,7 @@
 from layer_graph import LAYERS, Layer_graph
 import matplotlib.pyplot as plt
+import numpy as np
+import copy
 
 class Pool(object):
     def __init__(self):
@@ -175,11 +177,13 @@ class Pool(object):
         self.pool.append(G)
         print(len(self.pool))
 
+
 if __name__ == '__main__':
     P = Pool()
-    mut_pool = P.pool[0]
+    mut_pool = copy.deepcopy(P.pool[0])
     mut_pool.show_graph()
-    mut_pool.mut_dec_en_masse()
+    mut_pool.mutate()
+    # mut_pool.mut_dec_en_masse()
     # node = mut_pool.get_graph().nodes[3]
     # print(type(node), node['num_of_filters'])
     # node['num_of_filters']= 1111

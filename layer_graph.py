@@ -177,7 +177,7 @@ class Layer_graph(object):
         node = random.randint(1, self.layer_count-1)
         while self.get_node_attr(node) not in self.process_layers:
             node = random.randint(1, self.layer_count-1)
-        layers_list = list(layers)
+        layers_list = list(LAYERS)
         type = random.choice(layers_list)
         while type not in self.process_layers:
             type = random.choice(layers_list)
@@ -197,8 +197,7 @@ class Layer_graph(object):
         edge = random.choice(list(edges))
         while self.get_node_attr(edge[0]) not in self.process_layers and self.get_node_attr(edge[1]) not in self.process_layers:
             edge = random.choice(list(edges))
-        print("hi")
-        layers_list = list(layers)
+        layers_list = list(LAYERS)
         type = random.choice(layers_list)
         while type not in self.process_layers:
             type = random.choice(layers_list)
@@ -215,4 +214,18 @@ class Layer_graph(object):
         self._graph.remove_edge(*edge)
         new_node = self.append(type, num_of_filters, stride, edge[0])
         self.add_edge(new_node, edge[1])
+
+    def mut_step(self):
+        mut_op = random.choice([self.mut_dec_single, self.mut_inc_single, 
+            self.mut_swap_label, self.mut_wedge_layer, 
+            self.mut_inc_en_masse, self.mut_dec_en_masse, 
+            self.mut_skip])
+        mut_op()
+
+    def mutate(self):
+        num_of_steps = np.random.choice([1, 2, 3, 4, 5], 1, p=[0.5, 0.25, 0.125, 0.075, 0.05])[0]
+        print(num_of_steps)
+        for i in range(num_of_steps):
+            self.mut_step()
+        self.update_lm()
         
