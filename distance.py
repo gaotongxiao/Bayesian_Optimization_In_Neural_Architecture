@@ -1,7 +1,7 @@
 import networkx as nx
 import numpy as np
 import layer_graph as lg
-from layer_graph import layers
+from layer_graph import LAYERS
 import ot
 
 
@@ -122,6 +122,10 @@ def get_str_matrix(g1, g2):
     return C
     
 def get_distance(g1, g2, v_str=0.5):
+    '''
+    return :
+        d, d_bar
+    '''
     C = get_lmm_matrix(g1, g2) + get_nas_matrix(g1, g2) + v_str * get_str_matrix(g1, g2)
     y1 = np.zeros((g1.get_num_layers() + 1))
     y2 = np.zeros((g2.get_num_layers() + 1))
@@ -131,10 +135,12 @@ def get_distance(g1, g2, v_str=0.5):
     for i, node in enumerate(g2.get_nodes()):
         y2[i] = g2.get_node_attr(node, 'layer_mass')
     y2[g2.get_num_layers()] = g1.get_total_mass()
-    return ot.emd2(y1, y2, C)
+    d = ot.emd2(y1, y2, C)
+    d_bar = d / (g1.get_total_mass() + g2.get_total_mass())
+    return d, d_bar
 
 if __name__ == '__main__':
-    G = lg.layer_graph(235)
+    G = lg.Layer_graph(235)
     G.add_node(LAYERS.ip)
     G.add_node(LAYERS.conv3, 16)
     G.add_node(LAYERS.conv3, 16)
@@ -153,7 +159,7 @@ if __name__ == '__main__':
     G.add_edge(6, 7)
     G.add_edge(7, 8)
     G.update_lm()
-    G1 = lg.layer_graph(1)
+    G1 = lg.Layer_graph(1)
     G1.add_node(LAYERS.ip)
     G1.add_node(LAYERS.conv3, 16)
     G1.add_node(LAYERS.conv3, 16)
@@ -175,7 +181,7 @@ if __name__ == '__main__':
     G1.add_edge(7, 8)
     G1.add_edge(8, 9)
     G1.update_lm()
-    G2 = lg.layer_graph(1)
+    G2 = lg.Layer_graph(1)
     G2.add_node(LAYERS.ip)
     G2.add_node(LAYERS.conv7, 16)
     G2.add_node(LAYERS.conv5, 32)
