@@ -220,6 +220,7 @@ class Layer_graph(object):
             self.mut_swap_label, self.mut_wedge_layer, 
             self.mut_inc_en_masse, self.mut_dec_en_masse, 
             self.mut_skip])
+        print(mut_op.__name__)
         mut_op()
 
     def mutate(self):

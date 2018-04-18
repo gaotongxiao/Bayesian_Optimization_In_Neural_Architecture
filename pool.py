@@ -2,10 +2,11 @@ from layer_graph import LAYERS, Layer_graph
 import matplotlib.pyplot as plt
 import numpy as np
 import copy
+import math
 
 class Pool(object):
     def __init__(self):
-        self.pool = []
+        self.models = []
         G = Layer_graph(57784)
         G.add_node(LAYERS.ip)
         G.append(LAYERS.conv3, 64)
@@ -29,7 +30,7 @@ class Pool(object):
         G.append(LAYERS.softmax)
         G.append(LAYERS.op)
         G.update_lm()
-        self.pool.append(G)
+        self.models.append((G, -math.log(0.9)))
         G = Layer_graph(92111)
         G.add_node(LAYERS.ip)
         G.append(LAYERS.conv3, 64)
@@ -56,7 +57,7 @@ class Pool(object):
         G.append(LAYERS.softmax)
         G.append(LAYERS.op)
         G.update_lm()
-        self.pool.append(G)
+        self.models.append((G, -math.log(0.9)))
         G = Layer_graph(126517)
         G.add_node(LAYERS.ip)
         G.append(LAYERS.conv3, 64)
@@ -86,7 +87,7 @@ class Pool(object):
         G.append(LAYERS.softmax)
         G.append(LAYERS.op)
         G.update_lm()
-        self.pool.append(G)
+        self.models.append((G, -math.log(0.9)))
         G = Layer_graph(57735)
         G.add_node(LAYERS.ip)
         G.append(LAYERS.conv7, 64)
@@ -104,7 +105,7 @@ class Pool(object):
         G.append(LAYERS.softmax)
         G.append(LAYERS.op)
         G.update_lm()
-        self.pool.append(G)
+        self.models.append((G, -math.log(0.9)))
         G = Layer_graph(92551)
         G.add_node(LAYERS.ip)
         G.append(LAYERS.conv7, 64)
@@ -126,7 +127,7 @@ class Pool(object):
         G.append(LAYERS.softmax)
         G.append(LAYERS.op)
         G.update_lm()
-        self.pool.append(G)
+        self.models.append((G, -math.log(0.9)))
         G = Layer_graph(31659)
         G.add_node(LAYERS.ip)
         G.append(LAYERS.conv7, 64)
@@ -148,7 +149,7 @@ class Pool(object):
         G.append(LAYERS.softmax)
         G.append(LAYERS.op)
         G.update_lm()
-        self.pool.append(G)
+        self.models.append((G, -math.log(0.9)))
         G = Layer_graph(127367)
         G.add_node(LAYERS.ip)
         G.append(LAYERS.conv7, 64)
@@ -174,18 +175,25 @@ class Pool(object):
         G.append(LAYERS.softmax)
         G.append(LAYERS.op)
         G.update_lm()
-        self.pool.append(G)
-        print(len(self.pool))
+        self.models.append((G, -math.log(0.9)))
+        print(len(self.models))
+
+    def get_layer_graph(self, graph_idx):
+        return self.models[graph_idx][0]
+
+    def get_layer_graph_acc(self, graph_idx):
+        return self.models[graph_idx][1]
+
+    def mutate_layer_graph(self, graph_idx):
+        mut_graph = copy.deepcopy(self.get_layer_graph(graph_idx))
+        mut_graph.mutate()
+        self.models.append((mut_graph, None))
+
 
 
 if __name__ == '__main__':
     P = Pool()
-    mut_pool = copy.deepcopy(P.pool[0])
-    mut_pool.show_graph()
-    mut_pool.mutate()
-    # mut_pool.mut_dec_en_masse()
-    # node = mut_pool.get_graph().nodes[3]
-    # print(type(node), node['num_of_filters'])
-    # node['num_of_filters']= 1111
+    P.mutate_layer_graph(0)
+    mut_pool = copy.deepcopy(P.get_layer_graph(7))
     mut_pool.show_graph()
     plt.show()
