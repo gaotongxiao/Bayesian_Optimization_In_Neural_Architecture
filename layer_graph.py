@@ -5,9 +5,9 @@ import random
 import numpy as np
 
 layers_type_num = 9
-layers = Enum('layers', ('conv3', 'conv5', 'conv7', 'maxpool', 'avgpool', 'fc', 'ip', 'op', 'softmax'))
+LAYERS = Enum('layers', ('conv3', 'conv5', 'conv7', 'maxpool', 'avgpool', 'fc', 'ip', 'op', 'softmax'))
 
-class layer_graph(object):
+class Layer_graph(object):
     '''
     Don't need to speicify input layer
     '''
@@ -16,11 +16,11 @@ class layer_graph(object):
         self.layer_count = 0
         self.input_unit = input_unit
         self.total_lm = 0
-        self.conv_layers = [layers.conv3, layers.conv5, layers.conv7]
-        self.pool_layers = [layers.maxpool, layers.avgpool]
-        self.process_layers = [*self.conv_layers, *self.pool_layers, layers.fc]
-        self.decision_layers = [layers.softmax]
-        self.iop_layers = [layers.ip, layers.op]
+        self.conv_layers = [LAYERS.conv3, LAYERS.conv5, LAYERS.conv7]
+        self.pool_layers = [LAYERS.maxpool, LAYERS.avgpool]
+        self.process_layers = [*self.conv_layers, *self.pool_layers, LAYERS.fc]
+        self.decision_layers = [LAYERS.softmax]
+        self.iop_layers = [LAYERS.ip, LAYERS.op]
     
     def add_node(self, type, num_of_filters=1, stride=2):
         '''
@@ -72,7 +72,7 @@ class layer_graph(object):
                 total_filters = 0
                 for n in self._graph.predecessors(node):
                     total_filters += self._graph.node[n]['num_of_filters']
-                k = 0.1 if self._graph.node[node]['type'] == layers.fc else 1
+                k = 0.1 if self._graph.node[node]['type'] == LAYERS.fc else 1
                 self._graph.node[node]['layer_mass'] = k * total_filters * self._graph.node[node]['num_of_filters']
                 pl_lm += self._graph.node[node]['layer_mass']
         self.total_lm  = pl_lm
@@ -166,7 +166,7 @@ class layer_graph(object):
             if self.get_node_attr(node) in self.pool_layers:
                 pool_counter += 1
         while pool_counter != 0:
-            nodes[0] = self.append(layers.avgpool, append_to=nodes[0])
+            nodes[0] = self.append(LAYERS.avgpool, append_to=nodes[0])
             pool_counter -= 1
         self.add_edge(nodes[0], nodes[1])
         
@@ -182,9 +182,9 @@ class layer_graph(object):
         type = random.choice(layers_list)
         while type not in self.process_layers:
             type = random.choice(layers_list)
-        if type in [*self.conv_layers, layers.fc]:
+        if type in [*self.conv_layers, LAYERS.fc]:
             num_of_filters = np.random.choice([64, 128, 256, 512], 1, p=[0.4, 0.3, 0.2, 0.1])[0]
-            stride = random.choice([1, 2]) if type != layers.fc else 2
+            stride = random.choice([1, 2]) if type != LAYERS.fc else 2
         else:
             num_of_filters = 1
             stride = 2
@@ -202,13 +202,13 @@ class layer_graph(object):
         type = random.choice(layers_list)
         while type not in self.process_layers:
             type = random.choice(layers_list)
-        if type in [*self.conv_layers, layers.fc]:
+        if type in [*self.conv_layers, LAYERS.fc]:
             num_of_filters = int((self.get_node_attr(
                 edge[0], 'num_of_filters') + self.get_node_attr(edge[1], 'num_of_filters')) / 2)
             if num_of_filters % 2: num_of_filters += 1
             if num_of_filters < 16:
                 num_of_filters = np.random.choice([64, 128, 256, 512], 1, p=[0.4, 0.3, 0.2, 0.1])[0]
-            stride = random.choice([1, 2]) if type != layers.fc else 2
+            stride = random.choice([1, 2]) if type != LAYERS.fc else 2
         else:
             num_of_filters = 1
             stride = 2
