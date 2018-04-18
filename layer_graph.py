@@ -159,6 +159,7 @@ class layer_graph(object):
         while self._graph.has_edge(*nodes) and i < 20:
             i += 1
             nodes = random_pick()
+        if i == 20: return
         path = nx.shortest_path(self._graph, source=nodes[0], target=nodes[1])
         pool_counter = 0
         for node in path[1:-1]:
