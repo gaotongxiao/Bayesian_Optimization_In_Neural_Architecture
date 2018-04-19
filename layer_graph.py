@@ -78,22 +78,56 @@ class layer_graph(object):
     def get_total_mass(self):
         return self.total_lm
 
+    #remove designated pool layer - helper
+    def remove_a_pool(self, node):
+        for parent in self._graph.predecessors(node):
+            if sum(1 for _ in self._graph.successors(parent)) == 1:
+                #only child for this parent
+                self.add_edge(parent, first(self._graph.successors(node)))#connect parent u with del's child
+        for child in self._graph.successors(node):
+            if sum(1 for _ in self._graph.predecessors(child)) == 1:
+                #only parent for this child
+                self.add_edge(first(self._graph.predecessors(node), child))#connect child u with del's parent
+        self._graph.remove_node(node)
+
+    #remove pool recursively by going up - helper
+    def remove_pool(self, node):
+        #base case
+        if node['type'] == layers.maxpool or node['type'] == layers.avgpool:
+            remove_a_pool(node)
+        else:
+            for parent in self._graph.predecessors(node):
+                remove_pool(parent)
+
     def mut_dup_path(self):
         #king
+        pass
 
     def mut_remove_layer(self):
         #king
-        pick = random.randint(0, self.layer_count-1)
+        is_pool = False
         nodes = self.get_nodes()
-        one_parent = False
-        one_child = False
-        if self._graph.predecessors(nodes[pick]) == 1:
-            one_parent = True
-        if self._graph.successors(nodes[pick]) == 1:
-            one_child = True
-        if not one_parent and not one_child:
-            self._graph.remove_node(nodes[pick])
-        if one_parent:
+        while True:
+            pick = random.randint(0, self.layer_count-1)
+#            if nodes[pick]['type'] == layers.maxpool or nodes[pick]['type'] == layers.avgpool:
+#                is_pool = True
+#                break
+            if nodes[pick]['type'] == layers.conv3 or nodes[pick]['type'] == layers.conv5 or nodes[pick]['type'] == layers.conv7:
+                break
+        for parent in self._graph.predecessors(nodes[pick]):
+            if sum(1 for _ in self._graph.successors(parent)) == 1:
+                #only child for this parent
+                self.add_edge(parent, first(self._graph.successors(nodes[pick])))#connect parent u with del's child
+        for child in self._graph.successors(nodes[pick]):
+            if sum(1 for _ in self._graph.predecessors(child)) == 1:
+                #only parent for this child
+                self.add_edge(first(self._graph.predecessors(nodes[pick])), child)#connect child u with del's parent
+        #remove pool requires update for other paths
+#        if is_pool:
+            #find the closest gathering point for every child
+#            for child in self._graph.successors(nodes[pick])
+#            while True:
+        self._graph.remove_node(nodes[pick])
 
     def show_graph(self, node_size=1000):
         plt.subplot(121)
