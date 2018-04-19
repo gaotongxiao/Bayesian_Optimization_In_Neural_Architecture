@@ -193,10 +193,6 @@ class Pool(object):
 
 
 if __name__ == '__main__':
-<<<<<<< HEAD
-    P = pool()
-    P.pool[0].show_graph()
-=======
     '''
     G = Layer_graph(1)
     G.add_node(LAYERS.ip)
@@ -226,4 +222,3 @@ if __name__ == '__main__':
     print(netModel.post_K(mut_pool, mut_pool, X))
     # mut_pool.show_graph()
     # plt.show()
->>>>>>> 8c10942c227f73a8d18a0ace59f91699dfc91709
