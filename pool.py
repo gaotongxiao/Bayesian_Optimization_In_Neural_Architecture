@@ -222,6 +222,7 @@ if __name__ == '__main__':
     X = list(list(zip(*(P.models)))[0])
     Y = list(list(zip(*(P.models)))[1])
     # print(netModel.post_K(mut_pool, mut_pool, X))
-    print(netModel.acquisition_func(mut_pool, X, Y, max(Y)))
+    # print(netModel.acquisition_func(mut_pool, X, Y, max(Y)))
+    print(netModel.post_dist(mut_pool, 0.9, X, Y))
     # mut_pool.show_graph()
     # plt.show()

@@ -1,6 +1,6 @@
 from distance import get_distance
 import numpy as np
-from scipy.stats import norm
+from scipy.stats import norm, multivariate_normal
 
 class NetModel():
     def __init__(self):
@@ -14,7 +14,7 @@ class NetModel():
     def K(self, X1, X2=None):
         def K_single(x1, x2):
             first_term = self.alpha*np.exp(sum([-self.betas[i]*get_distance(x1, x2,self.v_str[i])[0] for i in range(4)]))
-            second_term = self.alpha_bar*np.exp(sum([-self.beta_bars[i]*get_distance(x1, x2, self.v_str[i])[1] for i in range(4)]))
+            second_term = self.alpha_bar*np.exp(sum([-self.beta_bars[i]*(get_distance(x1, x2, self.v_str[i])[1])**2 for i in range(4)]))
             return first_term + second_term
         if not X2:
             X2 = X1
@@ -40,4 +40,7 @@ class NetModel():
     def acquisition_func(self, x, X, Y, cur_max):
         mu_x = self.post_mu(x, X, Y)
         K_xx = self.post_K(x, x, X)
-        return (cur_max - mu_x)*norm.cdf(cur_max, mu_x, np.sqrt(K_xx)) + K_xx*norm.pdf(cur_max, mu_x, K_xx)
+        return (cur_max - mu_x)*norm.cdf(cur_max, mu_x, np.sqrt(K_xx)) + K_xx*norm.pdf(cur_max, mu_x, np.sqrt(K_xx))
+
+    def post_dist(self, X_star, Y_star, X, Y):
+        return multivariate_normal.pdf(Y_star, self.post_mu(X_star, X, Y), self.post_K(X_star, X_star, X))
