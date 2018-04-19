@@ -15,6 +15,12 @@ class NetModel():
             first_term = self.alpha*np.exp(sum([-self.betas[i]*get_distance(x1, x2,self.v_str[i])[0] for i in range(4)]))
             second_term = self.alpha_bar*np.exp(sum([-self.beta_bars[i]*get_distance(x1, x2, self.v_str[i])[1] for i in range(4)]))
             return first_term + second_term
+        if not X2:
+            X2 = X1
+        if not isinstance(X1, list):
+            X1 = [X1]
+        if not isinstance(X2, list):
+            X2 = [X2]
         n_1 = len(X1)
         n_2 = len(X2)
         ret = np.zeros((n_1, n_2))
@@ -22,6 +28,10 @@ class NetModel():
             for j in range(n_2):
                 ret[i, j] = K_single(X1[i], X2[j])
         return ret
+
+    def post_K(self, x1, x2, X):
+        return self.K(x1, x2) - self.K(x1, X).dot(np.linalg.inv(self.K(X, X))).dot(self.K(X, x2))
+
     
     def mean_cond(self, x, X, Y):
         print(np.shape(self.K(x,X)))

@@ -217,5 +217,8 @@ if __name__ == '__main__':
     gt1 = P.get_layer_graph(3)
     gt2 = P.get_layer_graph(4)
     print(netModel.mean_cond([P.get_layer_graph(5)], [gt1,gt2], [0.1,0.2]))
+    # print(netKernel.K([P.get_layer_graph(1), P.get_layer_graph(0)], [P.get_layer_graph(1), P.get_layer_graph(0)]))
+    X = list(list(zip(*(P.models)))[0])
+    print(netModel.post_K(mut_pool, mut_pool, X))
     # mut_pool.show_graph()
     # plt.show()
