@@ -16,6 +16,9 @@ class NetModel():
         self.num_beta = 1
         self.num_of_paras = 4
         
+    def mu(self, X, constant=0):
+        return constant*np.ones_like(X)
+
     def K(self, X1, X2=None):
         def K_single(x1, x2):
             first_term = self.alpha*np.exp(sum([-self.betas[i]*get_distance(x1, x2,self.v_str[i])[0] for i in range(self.num_beta)]))
@@ -40,35 +43,37 @@ class NetModel():
 
     
     def post_mu(self, x, X, Y):
-        return self.mu + self.K(x, X).dot(np.linalg.inv(self.K(X, X)).dot((np.array(Y).T - self.mu)))
+        return self.mu(x) + self.K(x, X).dot(np.linalg.inv(self.K(X, X)).dot((np.array(Y).T - self.mu(x))))
 
     def acquisition_func(self, x, X, Y, cur_max):
         mu_x = self.post_mu(x, X, Y)
         K_xx = self.post_K(x, x, X)
         return (cur_max - mu_x)*norm.cdf(cur_max, mu_x, np.sqrt(K_xx)) + K_xx*norm.pdf(cur_max, mu_x, np.sqrt(K_xx))
 
-
-    def post_dist(self, X_star, Y_star, X, Y):
-        return multivariate_normal.pdf(Y_star, self.post_mu(X_star, X, Y), self.post_K(X_star, X_star, X))
-
-    def mcmc(self):
+    def mcmc(self, X, Y):
         def lnprob(p):
-            if np.any(p < 0 + p > 1):
+            if np.any((p < 0) + (p > 1)):
                 return -np.inf
             self.alpha = p[0]
             self.alpha_bar = p[1]
             self.betas = [p[2]]
             self.beta_bars = [p[3]]
-            return self.post_dist(....)
-        nwalkers, ndim = 36, self.num_of_paras
+            return self.data_likelihood(X, Y)
+        nwalkers, ndim = 8, self.num_of_paras
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob)
 
         # Initialize the walkers.
         p0 = 0.5 * np.ones((4)) + 1e-4 * np.random.randn(nwalkers, ndim)
 
         print("Running burn-in")
-        p0, _, _ = sampler.run_mcmc(p0, 200)
+        p0, _, _ = sampler.run_mcmc(p0, 20)
 
         print("Running production chain")
-        sampler.run_mcmc(p0, 200);
+        sampler.run_mcmc(p0, 20);
         print(sampler.chain)
+
+    def data_likelihood(self, X, Y):
+        return multivariate_normal.pdf(Y, self.mu(X), self.K(X, X))
+
+    def post_dist(self, X_star, Y_star, X, Y):
+        return multivariate_normal.pdf(Y_star, self.post_mu(X_star, X, Y), self.post_K(X_star, X_star, X))
