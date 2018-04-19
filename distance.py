@@ -1,7 +1,7 @@
 import networkx as nx
 import numpy as np
 import layer_graph as lg
-from layer_graph import layers
+from layer_graph import LAYERS
 import ot
 
 
@@ -82,10 +82,10 @@ def get_lmm_matrix(g1, g2):
     '''
     M = np.ones((lg.layers_type_num, lg.layers_type_num)) * 3 # Inf should be any value larger than 2
     np.fill_diagonal(M, 0)
-    M[layers.conv3.value - 1, layers.conv5.value - 1] = 0.2
-    M[layers.conv3.value - 1, layers.conv7.value - 1] = 0.3
-    M[layers.conv5.value - 1, layers.conv7.value - 1] = 0.2
-    M[layers.maxpool.value - 1, layers.avgpool.value - 1] = 0.25
+    M[LAYERS.conv3.value - 1, LAYERS.conv5.value - 1] = 0.2
+    M[LAYERS.conv3.value - 1, LAYERS.conv7.value - 1] = 0.3
+    M[LAYERS.conv5.value - 1, LAYERS.conv7.value - 1] = 0.2
+    M[LAYERS.maxpool.value - 1, LAYERS.avgpool.value - 1] = 0.25
     M = np.triu(M)
     M += M.T - np.diag(M.diagonal())
     #Construct penality matrix
@@ -103,8 +103,8 @@ def get_nas_matrix(g1, g2):
 
 def get_str_matrix(g1, g2):
     C = np.zeros((g1.get_num_layers() + 1, g2.get_num_layers() + 1))
-    special_layers = [[layers.conv3, layers.conv5, layers.conv7], [layers.maxpool, layers.avgpool], \
-                       [layers.fc]]
+    special_layers = [[LAYERS.conv3, LAYERS.conv5, LAYERS.conv7], [LAYERS.maxpool, LAYERS.avgpool], \
+                       [LAYERS.fc]]
     pl_1 = get_path_length(g1)
     pl_2 = get_path_length(g2)
     for c1, n1 in enumerate(g1.get_nodes()):
@@ -122,6 +122,10 @@ def get_str_matrix(g1, g2):
     return C
     
 def get_distance(g1, g2, v_str=0.5):
+    '''
+    return :
+        d, d_bar
+    '''
     C = get_lmm_matrix(g1, g2) + get_nas_matrix(g1, g2) + v_str * get_str_matrix(g1, g2)
     y1 = np.zeros((g1.get_num_layers() + 1))
     y2 = np.zeros((g2.get_num_layers() + 1))
@@ -131,19 +135,21 @@ def get_distance(g1, g2, v_str=0.5):
     for i, node in enumerate(g2.get_nodes()):
         y2[i] = g2.get_node_attr(node, 'layer_mass')
     y2[g2.get_num_layers()] = g1.get_total_mass()
-    return ot.emd2(y1, y2, C)
+    d = ot.emd2(y1, y2, C)
+    d_bar = d / (g1.get_total_mass() + g2.get_total_mass())
+    return d, d_bar
 
 if __name__ == '__main__':
-    G = lg.layer_graph(235)
-    G.add_node(layers.ip)
-    G.add_node(layers.conv3, 16)
-    G.add_node(layers.conv3, 16)
-    G.add_node(layers.conv3, 32)
-    G.add_node(layers.conv5, 32)
-    G.add_node(layers.maxpool)
-    G.add_node(layers.fc, 16)
-    G.add_node(layers.softmax)
-    G.add_node(layers.op)
+    G = lg.Layer_graph(235)
+    G.add_node(LAYERS.ip)
+    G.add_node(LAYERS.conv3, 16)
+    G.add_node(LAYERS.conv3, 16)
+    G.add_node(LAYERS.conv3, 32)
+    G.add_node(LAYERS.conv5, 32)
+    G.add_node(LAYERS.maxpool)
+    G.add_node(LAYERS.fc, 16)
+    G.add_node(LAYERS.softmax)
+    G.add_node(LAYERS.op)
     G.add_edge(0, 1)
     G.add_edge(1, 2)
     G.add_edge(2, 3)
@@ -153,17 +159,17 @@ if __name__ == '__main__':
     G.add_edge(6, 7)
     G.add_edge(7, 8)
     G.update_lm()
-    G1 = lg.layer_graph(1)
-    G1.add_node(layers.ip)
-    G1.add_node(layers.conv3, 16)
-    G1.add_node(layers.conv3, 16)
-    G1.add_node(layers.conv3, 16)
-    G1.add_node(layers.conv3, 16)
-    G1.add_node(layers.conv5, 32)
-    G1.add_node(layers.maxpool)
-    G1.add_node(layers.fc, 16)
-    G1.add_node(layers.softmax)
-    G1.add_node(layers.op)
+    G1 = lg.Layer_graph(1)
+    G1.add_node(LAYERS.ip)
+    G1.add_node(LAYERS.conv3, 16)
+    G1.add_node(LAYERS.conv3, 16)
+    G1.add_node(LAYERS.conv3, 16)
+    G1.add_node(LAYERS.conv3, 16)
+    G1.add_node(LAYERS.conv5, 32)
+    G1.add_node(LAYERS.maxpool)
+    G1.add_node(LAYERS.fc, 16)
+    G1.add_node(LAYERS.softmax)
+    G1.add_node(LAYERS.op)
     G1.add_edge(0, 1)
     G1.add_edge(1, 2)
     G1.add_edge(2, 4)
@@ -175,22 +181,22 @@ if __name__ == '__main__':
     G1.add_edge(7, 8)
     G1.add_edge(8, 9)
     G1.update_lm()
-    G2 = lg.layer_graph(1)
-    G2.add_node(layers.ip)
-    G2.add_node(layers.conv7, 16)
-    G2.add_node(layers.conv5, 32)
-    G2.add_node(layers.conv3, 16)
-    G2.add_node(layers.conv3, 16)
-    G2.add_node(layers.avgpool)
-    G2.add_node(layers.maxpool)
-    G2.add_node(layers.maxpool)
-    G2.add_node(layers.fc, 16)
-    G2.add_node(layers.conv3, 16)
-    G2.add_node(layers.softmax)
-    G2.add_node(layers.maxpool)
-    G2.add_node(layers.fc, 16)
-    G2.add_node(layers.softmax)
-    G2.add_node(layers.op)
+    G2 = lg.Layer_graph(1)
+    G2.add_node(LAYERS.ip)
+    G2.add_node(LAYERS.conv7, 16)
+    G2.add_node(LAYERS.conv5, 32)
+    G2.add_node(LAYERS.conv3, 16)
+    G2.add_node(LAYERS.conv3, 16)
+    G2.add_node(LAYERS.avgpool)
+    G2.add_node(LAYERS.maxpool)
+    G2.add_node(LAYERS.maxpool)
+    G2.add_node(LAYERS.fc, 16)
+    G2.add_node(LAYERS.conv3, 16)
+    G2.add_node(LAYERS.softmax)
+    G2.add_node(LAYERS.maxpool)
+    G2.add_node(LAYERS.fc, 16)
+    G2.add_node(LAYERS.softmax)
+    G2.add_node(LAYERS.op)
     G2.add_edge(0, 1)
     G2.add_edge(1, 2)
     G2.add_edge(2, 5)
