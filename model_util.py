@@ -22,6 +22,8 @@ class NetModel():
             for j in range(n_2):
                 ret[i, j] = K_single(X1[i], X2[j])
         return ret
-
-
     
+    def mean_cond(self, x, X, Y):
+        print(np.shape(self.K(x,X)))
+        print(np.shape(np.array(Y).T))
+        return self.mu + self.K(x, X).dot(np.linalg.inv(self.K(X, X)).dot((np.array(Y).T - self.mu)))

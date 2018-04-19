@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import copy
 import math
-from kernels import NetKernel
+from model_util import NetModel
 
 class Pool(object):
     def __init__(self):
@@ -193,6 +193,7 @@ class Pool(object):
 
 
 if __name__ == '__main__':
+    '''
     G = Layer_graph(1)
     G.add_node(LAYERS.ip)
     G.append(LAYERS.fc, 1024)
@@ -207,10 +208,14 @@ if __name__ == '__main__':
     plt.show()
     for i in G.get_nodes():
         print(i)
+    '''
     P = Pool()
     P.mutate_layer_graph(0)
     mut_pool = copy.deepcopy(P.get_layer_graph(7))
-    netKernel = NetKernel()
-    print(netKernel.K([P.get_layer_graph(1), P.get_layer_graph(0)], [P.get_layer_graph(1), P.get_layer_graph(0)]))
+    netModel = NetModel()
+    print(netModel.K([P.get_layer_graph(1), P.get_layer_graph(0)], [P.get_layer_graph(1), P.get_layer_graph(0)]))
+    gt1 = P.get_layer_graph(3)
+    gt2 = P.get_layer_graph(4)
+    print(netModel.mean_cond([P.get_layer_graph(5)], [gt1,gt2], [0.1,0.2]))
     # mut_pool.show_graph()
     # plt.show()
