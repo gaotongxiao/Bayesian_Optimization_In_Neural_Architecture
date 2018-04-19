@@ -1,13 +1,14 @@
 from distance import get_distance
 import numpy as np
 
-class NetKernel():
+class NetModel():
     def __init__(self):
         self.alpha = 0.1
         self.alpha_bar = 0.1
         self.betas = [0.1, 0.2, 0.3, 0.4]
         self.beta_bars = [0.1, 0.2, 0.3, 0.4]
         self.v_str = [0.1, 0.2, 0.4, 0.8]
+        self.mu = 0
 
     def K(self, X1, X2=None):
         def K_single(x1, x2):
@@ -21,4 +22,6 @@ class NetKernel():
             for j in range(n_2):
                 ret[i, j] = K_single(X1[i], X2[j])
         return ret
+
+
     
