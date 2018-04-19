@@ -1,7 +1,7 @@
 from distance import get_distance
 import numpy as np
-from scipy.stats import norm
 import emcee
+from scipy.stats import norm, multivariate_normal
 
 class NetModel():
     def __init__(self):
@@ -13,10 +13,9 @@ class NetModel():
         self.beta_bars = [0.1]
         # self.v_str = [0.1, 0.2, 0.4, 0.8]
         self.v_str = [0.1]
-        self.mu = 0
         self.num_beta = 1
         self.num_of_paras = 4
-
+        
     def K(self, X1, X2=None):
         def K_single(x1, x2):
             first_term = self.alpha*np.exp(sum([-self.betas[i]*get_distance(x1, x2,self.v_str[i])[0] for i in range(self.num_beta)]))
@@ -46,7 +45,11 @@ class NetModel():
     def acquisition_func(self, x, X, Y, cur_max):
         mu_x = self.post_mu(x, X, Y)
         K_xx = self.post_K(x, x, X)
-        return (cur_max - mu_x)*norm.cdf(cur_max, mu_x, np.sqrt(K_xx)) + K_xx*norm.pdf(cur_max, mu_x, K_xx)
+        return (cur_max - mu_x)*norm.cdf(cur_max, mu_x, np.sqrt(K_xx)) + K_xx*norm.pdf(cur_max, mu_x, np.sqrt(K_xx))
+
+
+    def post_dist(self, X_star, Y_star, X, Y):
+        return multivariate_normal.pdf(Y_star, self.post_mu(X_star, X, Y), self.post_K(X_star, X_star, X))
 
     def mcmc(self):
         def lnprob(p):
@@ -56,7 +59,7 @@ class NetModel():
             self.alpha_bar = p[1]
             self.betas = [p[2]]
             self.beta_bars = [p[3]]
-            return self.likelihood(....)
+            return self.post_dist(....)
         nwalkers, ndim = 36, self.num_of_paras
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob)
 
@@ -68,4 +71,4 @@ class NetModel():
 
         print("Running production chain")
         sampler.run_mcmc(p0, 200);
-    
+        print(sampler.chain)
