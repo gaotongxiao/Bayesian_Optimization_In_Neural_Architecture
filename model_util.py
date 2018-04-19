@@ -15,6 +15,8 @@ class NetModel():
         self.v_str = [0.1]
         self.num_beta = 1
         self.num_of_paras = 4
+        self.distance_matrix = None
+        self.distance_bar_matrix = None
         
     def mu(self, X, constant=0):
         return constant*np.ones_like(X)
@@ -38,6 +40,38 @@ class NetModel():
                 ret[i, j] = K_single(X1[i], X2[j])
         return ret
 
+    def K_hardcode(self, X1, X2=None):
+
+        if not X2:
+            X2 = X1
+        if not isinstance(X1, list):
+            X1 = [X1]
+        if not isinstance(X2, list):
+            X2 = [X2]
+        n_1 = len(X1)
+        n_2 = len(X2)
+
+        def init_distance_matrix():
+            if  self.distance_matrix is None or self.distance_bar_matrix is None:
+                self.distance_matrix = np.zeros((n_1, n_2))
+                self.distance_bar_matrix = np.zeros((n_1, n_2))
+                for i in range(n_1):
+                    for j in range(n_2):
+                        d, d_bar = get_distance(X1[i], X2[j], self.v_str[0])
+                        self.distance_matrix[i, j] = d
+                        self.distance_bar_matrix[i, j] = d_bar
+        def K__hardcode_single(xi, xj):
+            first_term = self.alpha*np.exp(sum([-self.betas[i]*self.distance_matrix[xi, xj] for i in range(self.num_beta)]))
+            second_term = self.alpha_bar*np.exp(sum([-self.beta_bars[i]*self.distance_bar_matrix[xi, xj] for i in range(self.num_beta)]))
+            return first_term + second_term
+
+        init_distance_matrix()
+        ret = np.zeros((n_1, n_2))
+        for i in range(n_1):
+            for j in range(n_2):
+                ret[i, j] = K__hardcode_single(i, j)
+        return ret
+
     def post_K(self, x1, x2, X):
         return self.K(x1, x2) - self.K(x1, X).dot(np.linalg.inv(self.K(X, X))).dot(self.K(X, x2))
 
@@ -58,7 +92,7 @@ class NetModel():
             self.alpha_bar = p[1]
             self.betas = [p[2]]
             self.beta_bars = [p[3]]
-            return self.data_likelihood(X, Y)
+            return np.log(self.data_likelihood_hardcode(X, Y))
         nwalkers, ndim = 8, self.num_of_paras
         sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob)
 
@@ -66,11 +100,14 @@ class NetModel():
         p0 = 0.5 * np.ones((4)) + 1e-4 * np.random.randn(nwalkers, ndim)
 
         print("Running burn-in")
-        p0, _, _ = sampler.run_mcmc(p0, 20)
+        p0, _, _ = sampler.run_mcmc(p0, 10)
 
         print("Running production chain")
         sampler.run_mcmc(p0, 20);
-        print(sampler.chain)
+        print(sampler.lnprobability, np.shape(sampler.lnprobability))
+
+    def data_likelihood_hardcode(self, X, Y):
+        return multivariate_normal.pdf(Y, self.mu(X), self.K_hardcode(X, X))
 
     def data_likelihood(self, X, Y):
         return multivariate_normal.pdf(Y, self.mu(X), self.K(X, X))
