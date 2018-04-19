@@ -1,5 +1,6 @@
 from distance import get_distance
 import numpy as np
+from scipy.stats import norm
 
 class NetModel():
     def __init__(self):
@@ -33,7 +34,10 @@ class NetModel():
         return self.K(x1, x2) - self.K(x1, X).dot(np.linalg.inv(self.K(X, X))).dot(self.K(X, x2))
 
     
-    def mean_cond(self, x, X, Y):
-        print(np.shape(self.K(x,X)))
-        print(np.shape(np.array(Y).T))
+    def post_mu(self, x, X, Y):
         return self.mu + self.K(x, X).dot(np.linalg.inv(self.K(X, X)).dot((np.array(Y).T - self.mu)))
+
+    def acquisition_func(self, x, X, Y, cur_max):
+        mu_x = self.post_mu(x, X, Y)
+        K_xx = self.post_K(x, x, X)
+        return (cur_max - mu_x)*norm.cdf(cur_max, mu_x, np.sqrt(K_xx)) + K_xx*norm.pdf(cur_max, mu_x, K_xx)
