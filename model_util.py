@@ -9,7 +9,9 @@ class NetModel():
         self.betas = [0.1, 0.2, 0.3, 0.4]
         self.beta_bars = [0.1, 0.2, 0.3, 0.4]
         self.v_str = [0.1, 0.2, 0.4, 0.8]
-        self.mu = 0
+
+    def mu(self, X, constant=0):
+        return constant*np.ones_like(X)
 
     def K(self, X1, X2=None):
         def K_single(x1, x2):
@@ -35,12 +37,15 @@ class NetModel():
 
     
     def post_mu(self, x, X, Y):
-        return self.mu + self.K(x, X).dot(np.linalg.inv(self.K(X, X)).dot((np.array(Y).T - self.mu)))
+        return self.mu(x) + self.K(x, X).dot(np.linalg.inv(self.K(X, X)).dot((np.array(Y).T - self.mu(x))))
 
     def acquisition_func(self, x, X, Y, cur_max):
         mu_x = self.post_mu(x, X, Y)
         K_xx = self.post_K(x, x, X)
         return (cur_max - mu_x)*norm.cdf(cur_max, mu_x, np.sqrt(K_xx)) + K_xx*norm.pdf(cur_max, mu_x, np.sqrt(K_xx))
+
+    def data_likelihood(self, X, Y):
+        return multivariate_normal.pdf(Y, self.mu(X), self.K(X, X))
 
     def post_dist(self, X_star, Y_star, X, Y):
         return multivariate_normal.pdf(Y_star, self.post_mu(X_star, X, Y), self.post_K(X_star, X_star, X))
