@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import copy
 import math
+from kernels import NetKernel
 
 class Pool(object):
     def __init__(self):
@@ -195,5 +196,7 @@ if __name__ == '__main__':
     P = Pool()
     P.mutate_layer_graph(0)
     mut_pool = copy.deepcopy(P.get_layer_graph(7))
-    mut_pool.show_graph()
-    plt.show()
+    netKernel = NetKernel()
+    print(netKernel.K([P.get_layer_graph(1), P.get_layer_graph(0)], [P.get_layer_graph(1), P.get_layer_graph(0)]))
+    # mut_pool.show_graph()
+    # plt.show()
