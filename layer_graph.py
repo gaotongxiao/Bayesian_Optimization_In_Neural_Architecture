@@ -114,11 +114,32 @@ class Layer_graph(object):
                 remove_pool(parent)
 
     def mut_dup_path(self):
-        #king
-        pass
+        stop_count = random.randint(0, self.layer_count-1)
+        while True:
+            pick = random.randint(0, self.layer_count-1)#u1
+            if nodes[pick]['type'] == layers.fc or nodes[pick]['type'] == layers.ip or nodes[pick]['type'] == layers.op or nodes[pick]['type'] == layers.softmax:
+                continue
+        head = nodes[pick]
+        end = nodes[pick]
+        new_head = nodes[pick]
+        new_end = nodes[pick]
+        stop_head = nodes[pick]
+        for _ in range(stop_count):
+            #reach the end
+            if head['type'] == layers.fc:
+                break
+            pick_child = self._graph.successors(head)[random.randint(0, len(self._graph.successors(head))-1)]
+            #copy
+            new_end = self.add_node(pick_child['type'], pick_child['num_of_filters'], pick_child['stride'])
+            self.add_edge(new_head, new_end)
+            #update and store
+            stop_head = new_head
+            new_head = new_end
+            head = pick_child
+        #converge
+        self.add_edge(stop_head, head)
 
     def mut_remove_layer(self):
-        #king
         is_pool = False
         nodes = self.get_nodes()
         while True:
