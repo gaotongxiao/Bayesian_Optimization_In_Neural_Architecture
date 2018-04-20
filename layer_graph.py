@@ -25,12 +25,14 @@ class Layer_graph(object):
         self.layer_count = 0
         self.input_unit = input_unit
         self.total_lm = 0
+
         self.conv_layers = [LAYERS.conv3, LAYERS.conv5, LAYERS.conv7]
         self.pool_layers = [LAYERS.maxpool, LAYERS.avgpool]
         self.process_layers = [*self.conv_layers, *self.pool_layers, LAYERS.fc]
         self.decision_layers = [LAYERS.softmax]
         self.iop_layers = [LAYERS.ip, LAYERS.op]
-    
+
+
     def add_node(self, type, num_of_filters=1, stride=2):
         '''
         Return:
@@ -39,7 +41,7 @@ class Layer_graph(object):
         self._graph.add_node(self.layer_count, type=type, num_of_filters=num_of_filters, layer_mass=0, stride=stride)
         self.layer_count += 1
         return self.layer_count - 1
-    
+
     def add_edge(self, f, t):
         self._graph.add_edge(f, t)
 
@@ -49,10 +51,10 @@ class Layer_graph(object):
         new_node = self.add_node(type, num_of_filters, stride)
         self.add_edge(append_to, new_node)
         return new_node
-    
+
     def get_node_attr(self, n, attr='type'):
         return self._graph.node[n][attr]
-    
+
     def get_graph(self):
         return self._graph
 
@@ -98,9 +100,91 @@ class Layer_graph(object):
 
     def get_num_layers(self):
         return self.layer_count
-    
+
     def get_total_mass(self):
         return self.total_lm
+
+
+    #remove designated pool layer - helper
+    def remove_a_pool(self, node):
+        for parent in self._graph.predecessors(node):
+            if sum(1 for _ in self._graph.successors(parent)) == 1:
+                #only child for this parent
+                self.add_edge(parent, first(self._graph.successors(node)))#connect parent u with del's child
+        for child in self._graph.successors(node):
+            if sum(1 for _ in self._graph.predecessors(child)) == 1:
+                #only parent for this child
+                self.add_edge(first(self._graph.predecessors(node), child))#connect child u with del's parent
+        self._graph.remove_node(node)
+
+    #remove pool recursively by going up - helper
+    def remove_pool(self, node):
+        #base case
+        if node['type'] == layers.maxpool or node['type'] == layers.avgpool:
+            remove_a_pool(node)
+        else:
+            for parent in self._graph.predecessors(node):
+                remove_pool(parent)
+
+    def mut_dup_path(self):
+        stop_count = random.randint(1, self.layer_count-1)
+        while True:
+            pick = random.randint(0, self.layer_count-1)#u1
+            nodes  =list(self.get_nodes())
+            node = nodes[pick]
+            if not (self._graph.node[node]['type'] == LAYERS.fc or self._graph.node[node]['type'] == LAYERS.ip or self._graph.node[node]['type'] == LAYERS.op or self._graph.node[node]['type'] == LAYERS.softmax):
+                break
+        head = node
+        end = node
+        new_head = node
+        new_end = node
+        for _ in range(stop_count):
+            #reach the end
+            if self._graph.node[head]['type'] == LAYERS.fc:
+                break
+            childs = list(self._graph.successors(head))
+            pick_child = childs[random.randint(0, len(childs)-1)]
+            #copy
+            new_end = self.add_node(self._graph.node[pick_child]['type'], self._graph.node[pick_child]['num_of_filters'], self._graph.node[pick_child]['stride'])
+            self.add_edge(new_head, new_end)
+            #update and store
+            new_head = new_end
+            head = pick_child
+        #converge
+        self.add_edge(new_head, next(self._graph.successors(head)))
+
+    def mut_remove_layer(self):
+        is_pool = False
+        nodes = list(self.get_nodes())
+        pick_node = False
+        for _ in range(10):
+            pick = random.randint(0, self.layer_count-1)
+            node = nodes[pick]
+#            print('pick_trial: ', self._graph.node[node])#dict
+#            if nodes[pick]['type'] == layers.maxpool or nodes[pick]['type'] == layers.avgpool:
+#                is_pool = True
+#                break
+            if self._graph.node[node]['type'] == LAYERS.conv3 or self._graph.node[node]['type'] == LAYERS.conv5 or self._graph.node[node]['type'] == LAYERS.conv7:
+                pick_node = True
+                break
+#        print(self._graph.node[node])#dict
+        if not pick_node:
+            pass
+        for parent in self._graph.predecessors(node):
+            if sum(1 for _ in self._graph.successors(parent)) == 1:
+                #only child for this parent
+                self.add_edge(parent, next(self._graph.successors(node)))#connect parent u with del's child
+        for child in self._graph.successors(node):
+            if sum(1 for _ in self._graph.predecessors(child)) == 1:
+                #only parent for this child
+                self.add_edge(next(self._graph.predecessors(node)), child)#connect child u with del's parent
+        #remove pool requires update for other paths
+#        if is_pool:
+            #find the closest gathering point for every child
+#            for child in self._graph.successors(nodes[pick])
+#            while True:
+        self._graph.remove_node(node)
+        self.layer_count -= 1
 
     def processing_nodes(self):
         '''
@@ -184,7 +268,7 @@ class Layer_graph(object):
             pool_counter -= 1
         '''
         self.add_edge(nodes[0], nodes[1])
-        
+
 
     def mut_swap_label(self):
         '''
@@ -207,7 +291,7 @@ class Layer_graph(object):
         self._graph.node[node]['num_of_filters'] = num_of_filters
         self._graph.node[node]['type'] = type
 
-    
+
     def mut_wedge_layer(self):
         edges = self._graph.edges()
         edge = random.choice(list(edges))
@@ -232,16 +316,17 @@ class Layer_graph(object):
         self.add_edge(new_node, edge[1])
 
     def mut_step(self):
-        mut_op = random.choice([self.mut_dec_single, self.mut_inc_single, 
-            self.mut_swap_label, self.mut_wedge_layer, 
-            self.mut_inc_en_masse, self.mut_dec_en_masse, 
+        mut_op = random.choice([self.mut_dup_path, self.mut_remove_layer,
+            self.mut_dec_single, self.mut_inc_single,
+            self.mut_swap_label, self.mut_wedge_layer,
+            self.mut_inc_en_masse, self.mut_dec_en_masse,
             self.mut_skip])
         print(mut_op.__name__)
         mut_op()
 
     def mutate(self):
         num_of_steps = np.random.choice([1, 2, 3, 4, 5], 1, p=[0.5, 0.25, 0.125, 0.075, 0.05])[0]
-        print(num_of_steps)
+        print('num_step: ', num_of_steps)
         for i in range(num_of_steps):
             self.mut_step()
         self.finish()
