@@ -36,6 +36,9 @@ class Layer_graph(object):
     def add_edge(self, f, t):
         self._graph.add_edge(f, t)
 
+    def remove_edge(self, f, t):
+        self._graph.remove_edge(f, t)
+
     def append(self, type, num_of_filters=1, stride=2, append_to=None):
         if append_to is None:
             append_to = self.layer_count - 1
@@ -85,33 +88,104 @@ class Layer_graph(object):
             self._graph.node[node]['layer_mass'] = zeta2 * pl_lm / len(dl)
             self.total_lm += self._graph.node[node]['layer_mass']
 
+    #remove designated pool layer - helper
+    def remove_a_pool(self, node):
+        print('removing...')
+        for parent in self._graph.predecessors(node):
+            if sum(1 for _ in self._graph.successors(parent)) == 1:
+                #only child for this parent
+                self.add_edge(parent, next(self._graph.successors(node)))#connect parent u with del's child
+        for child in self._graph.successors(node):
+            if sum(1 for _ in self._graph.predecessors(child)) == 1:
+                #only parent for this child
+                self.add_edge(next(self._graph.predecessors(node)), child)#connect child u with del's parent
+        self._graph.remove_node(node)
+        self.layer_count -= 1
+
+    #remove pool recursively by going up - helper
+    def remove_pool(self, node):
+        #base case
+        if self._graph.node[node]['type'] == LAYERS.maxpool or self._graph.node[node]['type'] == LAYERS.avgpool:
+            self.remove_a_pool(node)
+        #reach the root
+        elif node == 0:
+            return
+        else:
+            tmp_parents = list(self._graph.predecessors(node))
+            for parent in tmp_parents:
+                self.remove_pool(parent)
+
+    def update_pool(self, after_add):
+        '''
+        Args:
+            after_add: being called after add_layer or not
+        '''
+        #bfs_edges = list(nx.bfs_edges(self._graph, list(self.get_nodes())[0]))
+        #bfs_cnt = np.zeros(len(bfs_edges))#record the num_pool from source to this node
+        topo_nodes = list(self.get_nodes())
+        topo_cnt = np.zeros(max(topo_nodes)+1)
+        is_updated = False
+        for update_node in topo_nodes[1:]:#skip the first node
+        #for tpl in bfs_edges:
+        #    update_node = tpl[1]
+            #remove pool
+            if not after_add:
+                parents = list(self._graph.predecessors(update_node))
+                if len(parents)==0:
+                    continue
+                pool_cnt = np.zeros(len(parents))
+                i = 0
+                for parent in parents:
+                    if self._graph.node[parent]['type'] == LAYERS.maxpool or self._graph.node[parent]['type'] == LAYERS.avgpool:
+                        pool_cnt[i] = topo_cnt[parent]+1
+                    else:
+                        pool_cnt[i] = topo_cnt[parent]
+                    i+=1
+                #remove pool recursively
+                i = 0
+                for parent in parents:
+                    if pool_cnt[i] > np.amin(pool_cnt):
+                        #remove ONE pool in this path
+                        self.remove_pool(parent)
+                        is_updated = True
+                    i+=1
+                topo_cnt[update_node] = np.amin(pool_cnt)#update bfs_cnt
+                if is_updated:
+                    self.update_pool(after_add)
+            #add pool
+            else:
+                parents = list(self._graph.predecessors(update_node))
+                if len(parents)==0:
+                    continue
+                pool_cnt = np.zeros(len(parents))
+                i = 0
+                for parent in parents:
+                    if self._graph.node[parent]['type'] == LAYERS.maxpool or self._graph.node[parent]['type'] == LAYERS.avgpool:
+                        pool_cnt[i] = topo_cnt[parent]+1
+                    else:
+                        pool_cnt[i] = topo_cnt[parent]
+                    i+=1
+                #add pool recursively
+                i = 0
+                for parent in parents:
+                    if pool_cnt[i] < np.amax(pool_cnt):
+                        #directly add ONE pool in this path (parent, pool) (pool, update_node)
+                        new_pool = self.add_node(LAYERS.maxpool)
+                        self.add_edge(parent, new_pool)
+                        self.add_edge(new_pool, update_node)
+                        self.remove_edge(parent, update_node)
+                        is_updated = True
+                    i+=1
+                topo_cnt[update_node] = np.amax(pool_cnt)#update bfs_cnt
+                if is_updated:
+                    self.update_pool(after_add)
+
     def get_num_layers(self):
         return self.layer_count
 
     def get_total_mass(self):
         return self.total_lm
 
-
-    #remove designated pool layer - helper
-    def remove_a_pool(self, node):
-        for parent in self._graph.predecessors(node):
-            if sum(1 for _ in self._graph.successors(parent)) == 1:
-                #only child for this parent
-                self.add_edge(parent, first(self._graph.successors(node)))#connect parent u with del's child
-        for child in self._graph.successors(node):
-            if sum(1 for _ in self._graph.predecessors(child)) == 1:
-                #only parent for this child
-                self.add_edge(first(self._graph.predecessors(node), child))#connect child u with del's parent
-        self._graph.remove_node(node)
-
-    #remove pool recursively by going up - helper
-    def remove_pool(self, node):
-        #base case
-        if node['type'] == layers.maxpool or node['type'] == layers.avgpool:
-            remove_a_pool(node)
-        else:
-            for parent in self._graph.predecessors(node):
-                remove_pool(parent)
 
     def mut_dup_path(self):
         stop_count = random.randint(1, self.layer_count-1)
@@ -147,16 +221,18 @@ class Layer_graph(object):
         for _ in range(10):
             pick = random.randint(0, self.layer_count-1)
             node = nodes[pick]
-#            print('pick_trial: ', self._graph.node[node])#dict
-#            if nodes[pick]['type'] == layers.maxpool or nodes[pick]['type'] == layers.avgpool:
-#                is_pool = True
-#                break
-            if self._graph.node[node]['type'] == LAYERS.conv3 or self._graph.node[node]['type'] == LAYERS.conv5 or self._graph.node[node]['type'] == LAYERS.conv7:
+            #print('pick_trial: ', self._graph.node[node])#dict
+            if self._graph.node[node]['type'] == LAYERS.maxpool or self._graph.node[node]['type'] == LAYERS.avgpool:
+                is_pool = True
                 pick_node = True
                 break
-#        print(self._graph.node[node])#dict
+            if self._graph.node[node]['type'] == LAYERS.conv3 or self._graph.node[node]['type'] == LAYERS.conv5 or self._graph.node[node]['type'] == LAYERS.conv7:
+                #continue
+                pick_node = True
+                break
+        print('removing: ', self._graph.node[node])#dict
         if not pick_node:
-            pass
+            return
         for parent in self._graph.predecessors(node):
             if sum(1 for _ in self._graph.successors(parent)) == 1:
                 #only child for this parent
@@ -165,13 +241,11 @@ class Layer_graph(object):
             if sum(1 for _ in self._graph.predecessors(child)) == 1:
                 #only parent for this child
                 self.add_edge(next(self._graph.predecessors(node)), child)#connect child u with del's parent
-        #remove pool requires update for other paths
-#        if is_pool:
-            #find the closest gathering point for every child
-#            for child in self._graph.successors(nodes[pick])
-#            while True:
         self._graph.remove_node(node)
         self.layer_count -= 1
+        #remove pool requires update for other paths
+        if is_pool:
+            self.update_pool(after_add = False)
 
     def processing_nodes(self):
         '''
@@ -218,7 +292,7 @@ class Layer_graph(object):
         plt.figure()
         labels = {}
         for n, t in self._graph.nodes(data=True):
-            labels[n] = str(t['type']) + ' ' + str(t['stride']) + ' ' + str(t['num_of_filters'])
+            labels[n] = str(n) + '*' + str(t['type']) + ' ' + str(t['stride']) + ' ' + str(t['num_of_filters'])
         nx.draw_kamada_kawai(self._graph, labels=labels, node_size=node_size)
         # plt.show()
 
