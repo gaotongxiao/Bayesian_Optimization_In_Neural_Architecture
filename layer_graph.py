@@ -164,7 +164,7 @@ class Layer_graph(object):
                     i+=1
                 topo_cnt[update_node] = np.amin(pool_cnt)#update bfs_cnt
                 if is_updated:
-                    self.update_pool(after_add)
+                    return self.update_pool(after_add)
             #add pool
             else:
                 parents = list(self._graph.predecessors(update_node))
@@ -191,7 +191,7 @@ class Layer_graph(object):
                     i+=1
                 topo_cnt[update_node] = np.amax(pool_cnt)#update bfs_cnt
                 if is_updated:
-                    self.update_pool(after_add)
+                    return self.update_pool(after_add)
 
     def get_num_layers(self):
         return self.layer_count
@@ -342,6 +342,7 @@ class Layer_graph(object):
             pool_counter -= 1
         '''
         self.add_edge(nodes[0], nodes[1])
+        self.update_pool(after_add=True)
 
 
     def mut_swap_label(self):
