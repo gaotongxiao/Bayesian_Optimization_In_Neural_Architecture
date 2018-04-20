@@ -7,12 +7,12 @@ import matplotlib.pyplot as plt
 
 class NetModel():
     def __init__(self):
-        self.alpha = 0.1
-        self.alpha_bar = 0.1
+        self.alpha = 0.5
+        self.alpha_bar = 0.5
         # self.betas = [0.1, 0.2, 0.3, 0.4]
-        self.betas = [0.1]
+        self.betas = [0.2]
         # self.beta_bars = [0.1, 0.2, 0.3, 0.4]
-        self.beta_bars = [0.1]
+        self.beta_bars = [0.2]
         # self.v_str = [0.1, 0.2, 0.4, 0.8]
         self.v_str = [0.1]
         self.num_beta = 1
@@ -28,7 +28,7 @@ class NetModel():
     def K(self, X1, X2=None):
         def K_single(x1, x2):
             first_term = self.alpha*np.exp(sum([-self.betas[i]*get_distance(x1, x2,self.v_str[i])[0] for i in range(self.num_beta)]))
-            second_term = self.alpha_bar*np.exp(sum([-self.beta_bars[i]*get_distance(x1, x2, self.v_str[i])[1] for i in range(self.num_beta)]))
+            second_term = self.alpha_bar*np.exp(sum([-self.beta_bars[i]*(get_distance(x1, x2, self.v_str[i])[1])**2 for i in range(self.num_beta)]))
             return first_term + second_term
         if not X2:
             X2 = X1
@@ -82,6 +82,7 @@ class NetModel():
 
     def post_K(self, x1, x2, X):
         res = self.K(x1, x2) - self.K(x1, X).dot(np.linalg.inv(self.K(X, X))).dot(self.K(X, x2))
+        return res
         w, v = np.linalg.eig(res)
         w = np.absolute(w)
         return w * v + 1e-10
@@ -102,24 +103,26 @@ class NetModel():
         '''
         res = 0
         for _ in range(sample_time):
-            f = random.randint(1, self.num_of_paras * 2 * (self.production_chain_steps + self.burn_in_steps))
+            f = random.randint(0, self.num_of_paras * 2 * (self.production_chain_steps + self.burn_in_steps)-1)
+            while self.sampler.flatlnprobability[f] == -np.inf:
+                f = random.randint(0, self.num_of_paras * 2 * (self.production_chain_steps + self.burn_in_steps)-1)
             p = self.sampler.flatchain[f]
-            self.alpha = p[0]
-            self.alpha_bar = p[1]
+            self.alpha = p[0]/(p[0]+p[1])
+            self.alpha_bar = p[1]/(p[0]+p[1])
             self.betas = [p[2]]
             self.beta_bars = [p[3]]
+            print(p)
             res += self.acquisition_func(x, X, Y, cur_min)
         return res / sample_time
 
     def mcmc(self, X, Y, burn_in_steps=100, production_chain_steps=1000):
         def lnprob(p):
-            if np.any((p < 0) + (p > 5)):
+            if np.any((p < 0) + (p > 10)):
                 return -np.inf
-            self.alpha = p[0]
-            self.alpha_bar = p[1]
+            self.alpha = p[0]/(p[0]+p[1])
+            self.alpha_bar = p[1]/(p[0]+p[1])
             self.betas = [p[2]]
             self.beta_bars = [p[3]]
-            # return np.sum(multivariate_normal.logpdf(np.array(p)))
             return np.log(self.data_likelihood_hardcode(X, Y))
         
         self.burn_in_steps = burn_in_steps
@@ -128,7 +131,7 @@ class NetModel():
         self.sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob)
 
         # Initialize the walkers.
-        p0 = 0.5 * np.ones((4)) + 5e-2 * np.random.randn(nwalkers, ndim)
+        p0 = 2.5 * np.ones((4)) + 5e-2 * np.random.randn(nwalkers, ndim)
 
         print("Running burn-in")
         p0, _, _ = self.sampler.run_mcmc(p0, self.burn_in_steps)
