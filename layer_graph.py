@@ -114,55 +114,64 @@ class Layer_graph(object):
                 remove_pool(parent)
 
     def mut_dup_path(self):
-        stop_count = random.randint(0, self.layer_count-1)
+        stop_count = random.randint(1, self.layer_count-1)
         while True:
             pick = random.randint(0, self.layer_count-1)#u1
-            if nodes[pick]['type'] == layers.fc or nodes[pick]['type'] == layers.ip or nodes[pick]['type'] == layers.op or nodes[pick]['type'] == layers.softmax:
-                continue
-        head = nodes[pick]
-        end = nodes[pick]
-        new_head = nodes[pick]
-        new_end = nodes[pick]
-        stop_head = nodes[pick]
+            nodes  =list(self.get_nodes())
+            node = nodes[pick]
+            if not (self._graph.node[node]['type'] == LAYERS.fc or self._graph.node[node]['type'] == LAYERS.ip or self._graph.node[node]['type'] == LAYERS.op or self._graph.node[node]['type'] == LAYERS.softmax):
+                break
+        head = node
+        end = node
+        new_head = node
+        new_end = node
         for _ in range(stop_count):
             #reach the end
-            if head['type'] == layers.fc:
+            if self._graph.node[head]['type'] == LAYERS.fc:
                 break
-            pick_child = self._graph.successors(head)[random.randint(0, len(self._graph.successors(head))-1)]
+            childs = list(self._graph.successors(head))
+            pick_child = childs[random.randint(0, len(childs)-1)]
             #copy
-            new_end = self.add_node(pick_child['type'], pick_child['num_of_filters'], pick_child['stride'])
+            new_end = self.add_node(self._graph.node[pick_child]['type'], self._graph.node[pick_child]['num_of_filters'], self._graph.node[pick_child]['stride'])
             self.add_edge(new_head, new_end)
             #update and store
-            stop_head = new_head
             new_head = new_end
             head = pick_child
         #converge
-        self.add_edge(stop_head, head)
+        self.add_edge(new_head, next(self._graph.successors(head)))
 
     def mut_remove_layer(self):
         is_pool = False
-        nodes = self.get_nodes()
-        while True:
+        nodes = list(self.get_nodes())
+        pick_node = False
+        for _ in range(10):
             pick = random.randint(0, self.layer_count-1)
+            node = nodes[pick]
+#            print('pick_trial: ', self._graph.node[node])#dict
 #            if nodes[pick]['type'] == layers.maxpool or nodes[pick]['type'] == layers.avgpool:
 #                is_pool = True
 #                break
-            if nodes[pick]['type'] == layers.conv3 or nodes[pick]['type'] == layers.conv5 or nodes[pick]['type'] == layers.conv7:
+            if self._graph.node[node]['type'] == LAYERS.conv3 or self._graph.node[node]['type'] == LAYERS.conv5 or self._graph.node[node]['type'] == LAYERS.conv7:
+                pick_node = True
                 break
-        for parent in self._graph.predecessors(nodes[pick]):
+#        print(self._graph.node[node])#dict
+        if not pick_node:
+            pass
+        for parent in self._graph.predecessors(node):
             if sum(1 for _ in self._graph.successors(parent)) == 1:
                 #only child for this parent
-                self.add_edge(parent, first(self._graph.successors(nodes[pick])))#connect parent u with del's child
-        for child in self._graph.successors(nodes[pick]):
+                self.add_edge(parent, next(self._graph.successors(node)))#connect parent u with del's child
+        for child in self._graph.successors(node):
             if sum(1 for _ in self._graph.predecessors(child)) == 1:
                 #only parent for this child
-                self.add_edge(first(self._graph.predecessors(nodes[pick])), child)#connect child u with del's parent
+                self.add_edge(next(self._graph.predecessors(node)), child)#connect child u with del's parent
         #remove pool requires update for other paths
 #        if is_pool:
             #find the closest gathering point for every child
 #            for child in self._graph.successors(nodes[pick])
 #            while True:
-        self._graph.remove_node(nodes[pick])
+        self._graph.remove_node(node)
+        self.layer_count -= 1
 
     def processing_nodes(self):
         '''
@@ -292,7 +301,8 @@ class Layer_graph(object):
         self.add_edge(new_node, edge[1])
 
     def mut_step(self):
-        mut_op = random.choice([self.mut_dec_single, self.mut_inc_single,
+        mut_op = random.choice([self.mut_dup_path, self.mut_remove_layer,
+            self.mut_dec_single, self.mut_inc_single,
             self.mut_swap_label, self.mut_wedge_layer,
             self.mut_inc_en_masse, self.mut_dec_en_masse,
             self.mut_skip])
@@ -301,7 +311,7 @@ class Layer_graph(object):
 
     def mutate(self):
         num_of_steps = np.random.choice([1, 2, 3, 4, 5], 1, p=[0.5, 0.25, 0.125, 0.075, 0.05])[0]
-        print(num_of_steps)
+        print('num_step: ', num_of_steps)
         for i in range(num_of_steps):
             self.mut_step()
         self.update_lm()

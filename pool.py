@@ -177,7 +177,7 @@ class Pool(object):
         G.append(LAYERS.op)
         G.update_lm()
         self.models.append((G, math.log(0.95)))
-        print(len(self.models))
+        #print(len(self.models))
 
     def get_layer_graph(self, graph_idx):
         return self.models[graph_idx][0]
@@ -219,11 +219,12 @@ if __name__ == '__main__':
     # gt2 = P.get_layer_graph(4)
     # print(netModel.mean_cond([P.get_layer_graph(5)], [gt1,gt2], [0.1,0.2]))
     # print(netKernel.K([P.get_layer_graph(1), P.get_layer_graph(0)], [P.get_layer_graph(1), P.get_layer_graph(0)]))
-    X = list(list(zip(*(P.models)))[0])
-    Y = list(list(zip(*(P.models)))[1])
+    #X = list(list(zip(*(P.models)))[0])
+    #Y = list(list(zip(*(P.models)))[1])
     # print(netModel.post_K(mut_pool, mut_pool, X))
     # print(netModel.acquisition_func(mut_pool, X, Y, max(Y)))
     # print(netModel.post_dist(mut_pool, 0.9, X, Y))
-    print(netModel.mcmc(X, Y))
-    # mut_pool.show_graph()
-    # plt.show()
+    #print(netModel.mcmc(X, Y))
+    #mut_pool.mut_dup_path()
+    mut_pool.show_graph()
+    plt.show()
