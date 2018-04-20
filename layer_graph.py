@@ -160,6 +160,7 @@ class Layer_graph(object):
             i += 1
             nodes = random_pick()
         if i == 20: return
+        '''
         path = nx.shortest_path(self._graph, source=nodes[0], target=nodes[1])
         pool_counter = 0
         for node in path[1:-1]:
@@ -168,6 +169,7 @@ class Layer_graph(object):
         while pool_counter != 0:
             nodes[0] = self.append(LAYERS.avgpool, append_to=nodes[0])
             pool_counter -= 1
+        '''
         self.add_edge(nodes[0], nodes[1])
         
 
