@@ -117,7 +117,6 @@ class NetModel():
             self.alpha_bar = p[1]/(p[0]+p[1])
             self.betas = [p[2]]
             self.beta_bars = [p[3]]
-            print(p)
             res += self.acquisition_func(x, Y, cur_min, X)
         return res / sample_time
 

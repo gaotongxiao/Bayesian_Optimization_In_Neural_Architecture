@@ -4,6 +4,7 @@ import layer_graph as lg
 from layer_graph import LAYERS
 import ot
 
+distance_matrix = {}
 
 def get_path_length(g):
     '''
@@ -121,11 +122,13 @@ def get_str_matrix(g1, g2):
     C /= 1 + len(special_layers)
     return C
     
-def get_distance(g1, g2, v_str=0.5):
+def get_distance(g1, g2, v_str=0.5, update=False):
     '''
     return :
         d, d_bar
     '''
+    if not update and (g1.id, g2.id) in distance_matrix.keys():
+        return distance_matrix[(g1.id, g2.id)]
     C = get_lmm_matrix(g1, g2) + get_nas_matrix(g1, g2) + v_str * get_str_matrix(g1, g2)
     y1 = np.zeros((g1.get_num_layers() + 1))
     y2 = np.zeros((g2.get_num_layers() + 1))
@@ -137,6 +140,8 @@ def get_distance(g1, g2, v_str=0.5):
     y2[g2.get_num_layers()] = g1.get_total_mass()
     d = ot.emd2(y1, y2, C)
     d_bar = d / (g1.get_total_mass() + g2.get_total_mass())
+    distance_matrix[(g1.id, g2.id)] = (d, d_bar)
+    distance_matrix[(g2.id, g1.id)] = (d, d_bar)
     return d, d_bar
 
 if __name__ == '__main__':

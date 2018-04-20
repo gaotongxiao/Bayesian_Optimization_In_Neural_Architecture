@@ -3,15 +3,24 @@ from enum import Enum
 import matplotlib.pyplot as plt
 import random
 import numpy as np
+import copy
+LAYERS = Enum('layers', ('conv3', 'conv5', 'conv7', 'maxpool', 'avgpool', 'fc', 'ip', 'op', 'softmax'))
+from distance import get_distance
 
 layers_type_num = 9
-LAYERS = Enum('layers', ('conv3', 'conv5', 'conv7', 'maxpool', 'avgpool', 'fc', 'ip', 'op', 'softmax'))
+
+layer_graph_count = 0
+layer_graph_table = []
 
 class Layer_graph(object):
     '''
     Don't need to speicify input layer
     '''
     def __init__(self, input_unit):
+        global layer_graph_table, layer_graph_count
+        self.id = layer_graph_count
+        layer_graph_count += 1
+        layer_graph_table.append(self)
         self._graph = nx.DiGraph()
         self.layer_count = 0
         self.input_unit = input_unit
@@ -53,12 +62,13 @@ class Layer_graph(object):
     def get_node(self, idx):
         return self.get_graph().nodes[idx]
 
-    def update_lm(self, zeta1=0.1, zeta2=0.1):
+    def finish(self, zeta1=0.1, zeta2=0.1):
         '''
         Args:
             zeta1: for ip, op
             zeta2: for decision layers
         '''
+        global layer_graph_table
         nodes = self.get_nodes()
         ipop = []
         dl = []
@@ -82,6 +92,9 @@ class Layer_graph(object):
         for node in dl:
             self._graph.node[node]['layer_mass'] = zeta2 * pl_lm / len(dl)
             self.total_lm += self._graph.node[node]['layer_mass']
+        # update distance
+        for graph in layer_graph_table:
+            get_distance(graph, self, update=True)
 
     def get_num_layers(self):
         return self.layer_count
@@ -231,5 +244,14 @@ class Layer_graph(object):
         print(num_of_steps)
         for i in range(num_of_steps):
             self.mut_step()
-        self.update_lm()
-        
+        self.finish()
+
+    def copy(self):
+        global layer_graph_count, layer_graph_table
+        G = copy.deepcopy(self)
+        layer_graph_table.append(G)
+        G.id = layer_graph_count 
+        G.finish()
+        layer_graph_count += 1
+        return G
+
