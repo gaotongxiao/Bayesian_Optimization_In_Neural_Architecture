@@ -213,7 +213,6 @@ if __name__ == '__main__':
     # P.mutate_layer_graph(0)
     mut_pool = copy.deepcopy(P.get_layer_graph(0))
     mut_pool.mutate()
-    netModel = NetModel()
     # print(netModel.K([P.get_layer_graph(1), P.get_layer_graph(0)], [P.get_layer_graph(1), P.get_layer_graph(0)]))
     # gt1 = P.get_layer_graph(3)
     # gt2 = P.get_layer_graph(4)
@@ -221,13 +220,16 @@ if __name__ == '__main__':
     # print(netKernel.K([P.get_layer_graph(1), P.get_layer_graph(0)], [P.get_layer_graph(1), P.get_layer_graph(0)]))
     X = list(list(zip(*(P.models)))[0])
     Y = list(list(zip(*(P.models)))[1])
+    netModel = NetModel(X)
     # for i in range(100):
     #     print(netModel.post_K(mut_pool, mut_pool, X))
     #     mut_pool.mutate()
     # print(netModel.post_K(mut_pool, mut_pool, X))
     # print(netModel.acquisition_func(mut_pool, X, Y, max(Y)))
     # print(netModel.post_dist(mut_pool, 0.9, X, Y))
-    netModel.mcmc(X, Y)
-    print(netModel.marginal_acquisition_func(mut_pool, X, Y, min(Y)))
+    netModel.mcmc(Y)
+    for x in range(10):
+        pass
+        print(netModel.marginal_acquisition_func(mut_pool, Y, min(Y)))
     # mut_pool.show_graph()
     # plt.show()
