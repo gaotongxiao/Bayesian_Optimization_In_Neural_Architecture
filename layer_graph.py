@@ -228,7 +228,7 @@ class Layer_graph(object):
             while self.get_node_attr(A) not in self.process_layers:
                 A = random.randint(1, self.layer_count-1)
             B = random.randint(1, self.layer_count-1)
-            while self.get_node_attr(B) not in self.process_layers:
+            while self.get_node_attr(B) not in self.process_layers or B == A:
                 B = random.randint(1, self.layer_count-1)
             for n in self.get_nodes():
                 if A == n:
