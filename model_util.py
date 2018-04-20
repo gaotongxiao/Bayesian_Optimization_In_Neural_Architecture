@@ -106,8 +106,10 @@ class NetModel():
         '''
         Assume that mcmc has been run before this function
         '''
+        if self.sampler is None:
+            print("Make sure run mcmc before calling this function!")
+            return
         res = 0
-            
         for _ in range(sample_time):
             f = random.randint(0, self.num_of_paras * 2 * (self.production_chain_steps + self.burn_in_steps)-1)
             while self.sampler.flatlnprobability[f] == -np.inf:
