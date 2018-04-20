@@ -224,6 +224,7 @@ if __name__ == '__main__':
     # print(netModel.post_K(mut_pool, mut_pool, X))
     # print(netModel.acquisition_func(mut_pool, X, Y, max(Y)))
     # print(netModel.post_dist(mut_pool, 0.9, X, Y))
-    print(netModel.mcmc(X, Y))
+    netModel.mcmc(X, Y)
+    print(netModel.marginal_acquisition_func(P.get_layer_graph(5), X, Y, -np.log(0.8)))
     # mut_pool.show_graph()
     # plt.show()
