@@ -5,176 +5,25 @@ import numpy as np
 import copy
 import math
 from model_util import NetModel
+import pickle
 
 class Pool(object):
     def __init__(self):
         self.models = []
-        G = Layer_graph(57784)
-        G.add_node(LAYERS.ip)
-        G.append(LAYERS.conv3, 64)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.conv3, 256)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.conv3, 512)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.fc, 128)
-        G.append(LAYERS.fc, 256)
-        G.append(LAYERS.fc, 512)
-        G.append(LAYERS.softmax)
-        G.append(LAYERS.op)
-        G.finish()
-        self.models.append((G, -math.log(0.1)))
-        G = Layer_graph(92111)
-        G.add_node(LAYERS.ip)
-        G.append(LAYERS.conv3, 64)
-        G.append(LAYERS.conv3, 64)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.conv3, 256)
-        G.append(LAYERS.conv3, 256)
-        G.append(LAYERS.conv3, 256)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.conv3, 512)
-        G.append(LAYERS.conv3, 512)
-        G.append(LAYERS.conv3, 512)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.fc, 128)
-        G.append(LAYERS.fc, 256)
-        G.append(LAYERS.fc, 512)
-        G.append(LAYERS.softmax)
-        G.append(LAYERS.op)
-        G.finish()
-        self.models.append((G, -math.log(0.3)))
-        G = Layer_graph(126517)
-        G.add_node(LAYERS.ip)
-        G.append(LAYERS.conv3, 64)
-        G.append(LAYERS.conv3, 64)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.conv3, 256)
-        G.append(LAYERS.conv3, 256)
-        G.append(LAYERS.conv3, 256)
-        G.append(LAYERS.conv3, 256)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.conv3, 512)
-        G.append(LAYERS.conv3, 512)
-        G.append(LAYERS.conv3, 512)
-        G.append(LAYERS.conv3, 512)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.fc, 128)
-        G.append(LAYERS.fc, 256)
-        G.append(LAYERS.fc, 512)
-        G.append(LAYERS.softmax)
-        G.append(LAYERS.op)
-        G.finish()
-        self.models.append((G, -math.log(0.4)))
-        G = Layer_graph(57735)
-        G.add_node(LAYERS.ip)
-        G.append(LAYERS.conv7, 64)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.conv3, 64) #conv 3 / 2
-        G.append(LAYERS.conv3, 64)
-        G.append(LAYERS.conv3, 128) #conv 3 / 2
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.conv3, 256) #conv 3 / 2
-        G.append(LAYERS.conv3, 256)
-        G.append(LAYERS.conv3, 512) #conv 3 / 2
-        G.append(LAYERS.conv3, 512)
-        G.append(LAYERS.avgpool)
-        G.append(LAYERS.fc, 1024)
-        G.append(LAYERS.softmax)
-        G.append(LAYERS.op)
-        G.finish()
-        self.models.append((G, -math.log(0.6)))
-        G = Layer_graph(92552)
-        G.add_node(LAYERS.ip)
-        G.append(LAYERS.conv7, 64)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.conv3, 64) #conv 3 / 2
-        G.append(LAYERS.conv3, 64)
-        G.append(LAYERS.conv3, 64)
-        G.append(LAYERS.conv3, 128) #conv 3 / 2
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.conv3, 256) #conv 3 / 2
-        G.append(LAYERS.conv3, 256)
-        G.append(LAYERS.conv3, 256)
-        G.append(LAYERS.conv3, 512) #conv 3 / 2
-        G.append(LAYERS.conv3, 512)
-        G.append(LAYERS.conv3, 512)
-        G.append(LAYERS.avgpool)
-        G.append(LAYERS.fc, 1024)
-        G.append(LAYERS.softmax)
-        G.append(LAYERS.op)
-        G.finish()
-        self.models.append((G, -math.log(0.85)))
-        G = Layer_graph(31659)
-        G.add_node(LAYERS.ip)
-        G.append(LAYERS.conv7, 64)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.conv3, 64) #conv 3 / 2
-        G.append(LAYERS.conv3, 64)
-        G.append(LAYERS.conv3, 64)
-        G.append(LAYERS.conv3, 64)
-        G.append(LAYERS.conv3, 128) #conv 3 / 2
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.conv3, 256) #conv 3 / 2
-        G.append(LAYERS.conv3, 256)
-        G.append(LAYERS.conv3, 256)
-        G.append(LAYERS.conv3, 256)
-        G.append(LAYERS.avgpool)
-        G.append(LAYERS.fc, 512)
-        G.append(LAYERS.softmax)
-        G.append(LAYERS.op)
-        G.finish()
-        self.models.append((G, -math.log(0.9)))
-        G = Layer_graph(127367)
-        G.add_node(LAYERS.ip)
-        G.append(LAYERS.conv7, 64)
-        G.append(LAYERS.maxpool)
-        G.append(LAYERS.conv3, 64) #conv 3 / 2
-        G.append(LAYERS.conv3, 64)
-        G.append(LAYERS.conv3, 64)
-        G.append(LAYERS.conv3, 64)
-        G.append(LAYERS.conv3, 128) #conv 3 / 2
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.conv3, 128)
-        G.append(LAYERS.conv3, 256) #conv 3 / 2
-        G.append(LAYERS.conv3, 256)
-        G.append(LAYERS.conv3, 256)
-        G.append(LAYERS.conv3, 256)
-        G.append(LAYERS.conv3, 512) #conv 3 / 2
-        G.append(LAYERS.conv3, 512)
-        G.append(LAYERS.conv3, 512)
-        G.append(LAYERS.conv3, 512)
-        G.append(LAYERS.avgpool)
-        G.append(LAYERS.fc, 1024)
-        G.append(LAYERS.softmax)
-        G.append(LAYERS.op)
-        G.finish()
-        self.models.append((G, -math.log(0.95)))
-        print(len(self.models))
 
+    def elim_LAYERS(self):
+        for i, _ in self.models:
+            i.elim_LAYERS()
+
+    def rec_LAYERS(self):
+        for i, _ in self.models:
+            i.rec_LAYERS()
+    
+    def append(self, graph, acc=None):
+        if not acc is None:
+            acc = -math.log(acc)
+        self.models.append((graph, acc))
+        
     def get_layer_graph(self, graph_idx):
         return self.models[graph_idx][0]
 
@@ -186,26 +35,21 @@ class Pool(object):
         mut_graph.mutate()
         self.models.append((mut_graph, None))
 
+def write(pl_obj, path='pool'):
+    pl_obj.elim_LAYERS()
+    pickle.dump(pl_obj, open(path, 'wb'))
 
+def read(path='pool'):
+    pl_obj = pickle.load(open(path, 'rb'))
+    pl_obj.rec_LAYERS()
+    return pl_obj
 
 if __name__ == '__main__':
-    '''
-    G = Layer_graph(1)
-    G.add_node(LAYERS.ip)
-    G.append(LAYERS.fc, 1024)
-    G.append(LAYERS.fc, 1024)
-    G.append(LAYERS.fc, 1024)
-    G.append(LAYERS.fc, 1024, append_to=0)
-    G.append(LAYERS.fc, 1024)
-    G.append(LAYERS.fc, 1024, append_to=0)
-    G.add_edge(6, 3)
-    G.add_edge(5, 3)
-    G.show_graph()
+    Q = read('models/pool')
+    for i in range(7):
+        Q.get_layer_graph(i).show_graph()
     plt.show()
-    for i in G.get_nodes():
-        print(i)
-    '''
-    P = Pool()
+    exit()
     lg.write(P.get_layer_graph(0))
     n = lg.read()
     n.show_graph()
@@ -236,5 +80,3 @@ if __name__ == '__main__':
     for x in range(10):
         pass
         print(netModel.marginal_acquisition_func(mut_pool, Y, min(Y), sample_time=100))
-    # mut_pool.show_graph()
-    # plt.show()
