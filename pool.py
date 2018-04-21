@@ -1,4 +1,5 @@
 from layer_graph import LAYERS, Layer_graph
+import layer_graph as lg
 import matplotlib.pyplot as plt
 import numpy as np
 import copy
@@ -205,6 +206,11 @@ if __name__ == '__main__':
         print(i)
     '''
     P = Pool()
+    lg.write(P.get_layer_graph(0))
+    n = lg.read()
+    n.show_graph()
+    plt.show()
+    exit()
     # P.mutate_layer_graph(0)
     mut_pool = P.get_layer_graph(1).copy()
     mut_pool.mut_skip()
