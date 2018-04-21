@@ -136,7 +136,6 @@ class Layer_graph(object):
         #bfs_edges = list(nx.bfs_edges(self._graph, list(self.get_nodes())[0]))
         #bfs_cnt = np.zeros(len(bfs_edges))#record the num_pool from source to this node
         topo_nodes = list(self.get_nodes())
-        print(topo_nodes)
         topo_cnt = np.zeros(max(topo_nodes)+1)
         is_updated = False
         for update_node in topo_nodes[1:]:#skip the first node
@@ -411,8 +410,7 @@ class Layer_graph(object):
         global layer_graph_count, layer_graph_table
         G = copy.deepcopy(self)
         layer_graph_table.append(G)
-        G.id = layer_graph_count 
+        G.id = layer_graph_count
         G.finish()
         layer_graph_count += 1
         return G
-
