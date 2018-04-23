@@ -11,13 +11,14 @@ class Pool(object):
     def __init__(self):
         self.models = []
 
-    def elim_LAYERS(self):
+    def elim(self):
         for i, _ in self.models:
             i.elim_LAYERS()
 
-    def rec_LAYERS(self):
+    def rec(self):
         for i, _ in self.models:
             i.rec_LAYERS()
+            i.renew_id()
     
     def append(self, graph, acc=None):
         if not acc is None:
@@ -36,25 +37,17 @@ class Pool(object):
         self.models.append((mut_graph, None))
 
 def write(pl_obj, path='pool'):
-    pl_obj.elim_LAYERS()
+    pl_obj.elim()
     pickle.dump(pl_obj, open(path, 'wb'))
 
 def read(path='pool'):
+    lg.clear_layers()
     pl_obj = pickle.load(open(path, 'rb'))
-    pl_obj.rec_LAYERS()
+    pl_obj.rec()
     return pl_obj
 
 if __name__ == '__main__':
-    Q = read('models/pool')
-    for i in range(7):
-        Q.get_layer_graph(i).show_graph()
-    plt.show()
-    exit()
-    lg.write(P.get_layer_graph(0))
-    n = lg.read()
-    n.show_graph()
-    plt.show()
-    exit()
+    P = read('models/pool')
     # P.mutate_layer_graph(0)
     mut_pool = P.get_layer_graph(1).copy()
     mut_pool.mut_skip()

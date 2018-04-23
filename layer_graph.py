@@ -5,7 +5,7 @@ import random
 import numpy as np
 import copy
 LAYERS = Enum('layers', ('conv3', 'conv5', 'conv7', 'maxpool', 'avgpool', 'fc', 'ip', 'op', 'softmax'))
-from distance import get_distance
+from distance import get_distance, clear_distance
 import pickle
 
 layers_type_num = 9
@@ -23,11 +23,14 @@ class Layer_graph(object):
         self.total_lm = 0
         self.input_unit = input_unit
 
+        self.renew_id()
+        self._init_layers()
+    
+    def renew_id(self):
         global layer_graph_table, layer_graph_count
         self.id = layer_graph_count
         layer_graph_count += 1
         layer_graph_table.append(self)
-        self._init_layers()
 
     def add_node(self, type, num_of_filters=1, stride=2):
         '''
@@ -428,6 +431,7 @@ class Layer_graph(object):
         for node in self._graph.nodes:
             self._graph.nodes[node]['type'] = LAYERS(self._graph.nodes[node]['type'])
         self._init_layers()
+        self.finish()
     
     def _init_layers(self):
         self.conv_layers = [LAYERS.conv3, LAYERS.conv5, LAYERS.conv7]
@@ -445,3 +449,8 @@ def read(path='graph'):
     lg_object.rec_LAYERS()
     return lg_object
 
+def clear_layers():
+    global layer_graph_count, layer_graph_table
+    layer_graph_table = []
+    layer_graph_count = 0
+    clear_distance()

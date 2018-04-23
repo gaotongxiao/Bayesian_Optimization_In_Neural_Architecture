@@ -143,3 +143,6 @@ def get_distance(g1, g2, v_str=0.5, update=False):
     distance_matrix[(g1.id, g2.id)] = (d, d_bar)
     distance_matrix[(g2.id, g1.id)] = (d, d_bar)
     return d, d_bar
+
+def clear_distance():
+    distance_matrix = {}
