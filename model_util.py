@@ -4,6 +4,7 @@ import emcee
 from scipy.stats import norm, multivariate_normal
 import random
 import matplotlib.pyplot as plt
+import math
 
 class NetModel():
     def __init__(self, X):
@@ -111,15 +112,20 @@ class NetModel():
             return
         res = 0
         for _ in range(sample_time):
-            f = random.randint(0, self.num_of_paras * 2 * (self.production_chain_steps + self.burn_in_steps)-1)
-            while self.sampler.flatlnprobability[f] == -np.inf:
+            while True:
                 f = random.randint(0, self.num_of_paras * 2 * (self.production_chain_steps + self.burn_in_steps)-1)
-            p = self.sampler.flatchain[f]
-            self.alpha = p[0]/(p[0]+p[1])
-            self.alpha_bar = p[1]/(p[0]+p[1])
-            self.betas = [p[2]]
-            self.beta_bars = [p[3]]
-            res += self.acquisition_func(x, Y, cur_min, X)
+                while self.sampler.flatlnprobability[f] == -np.inf:
+                    f = random.randint(0, self.num_of_paras * 2 * (self.production_chain_steps + self.burn_in_steps)-1)
+                p = self.sampler.flatchain[f]
+                self.alpha = p[0]/(p[0]+p[1])
+                self.alpha_bar = p[1]/(p[0]+p[1])
+                self.betas = [p[2]]
+                self.beta_bars = [p[3]]
+                func_value = self.acquisition_func(x, Y, cur_min, X)
+                if math.isnan(func_value):
+                    continue
+                res += func_value
+                break
         return res / sample_time
 
     def mcmc(self, Y, X=None, burn_in_steps=100, production_chain_steps=1000):

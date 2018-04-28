@@ -1,3 +1,4 @@
+import random
 from layer_graph import LAYERS, Layer_graph
 import layer_graph as lg
 import matplotlib.pyplot as plt
@@ -10,21 +11,46 @@ import pickle
 class Pool(object):
     def __init__(self):
         self.models = []
+        self.timestep = 0
+        self.cur_min = 1000
 
     def elim(self):
         for i, _ in self.models:
             i.elim_LAYERS()
 
     def rec(self):
-        for i, _ in self.models:
-            i.rec_LAYERS()
-            i.renew_id()
+        for idx, m in enumerate(self.models):
+            m[0].rec_LAYERS()
+            m[0].renew_id()
+            if m[1] is None:
+                m[0].show_graph()
+                plt.show()
+                ip = input("Input the accuracy, left empty if none:\n")
+                if ip != '':
+                    self.models[idx][1] = -math.log(float(ip))
     
     def append(self, graph, acc=None):
         if not acc is None:
             acc = -math.log(acc)
-        self.models.append((graph, acc))
-        
+            self.cur_min = min(self.cur_min, acc)
+        self.models.append([graph, acc])
+
+    def get_training_data(self):
+        X = []
+        Y = []
+        for m in self.models:
+            if not m[1] is None:
+               X.append(m[0])
+               Y.append(m[1]) 
+        return X, Y
+    
+    def get_pred_data(self):
+        x = []
+        for m in self.models:
+            if m[1] is None:
+               x.append(m[0])
+        return x
+
     def get_layer_graph(self, graph_idx):
         return self.models[graph_idx][0]
 
@@ -34,7 +60,27 @@ class Pool(object):
     def mutate_layer_graph(self, graph_idx):
         mut_graph = copy.deepcopy(self.get_layer_graph(graph_idx))
         mut_graph.mutate()
-        self.models.append((mut_graph, None))
+        self.models.append([mut_graph, None])
+
+    def mutate(self):
+        self.timestep += 1
+        N_mut = math.ceil(math.sqrt(self.timestep))
+        n = math.floor(math.sqrt(N_mut))
+        res_graph = []
+        mut_pools = []
+        X, Y = self.get_training_data()
+        netModel = NetModel(X)
+        netModel.mcmc(Y)
+        for m in random.choices(X, k=N_mut):
+            new_m = m.copy()
+            new_m.mutate()
+            new_m_acq = netModel.marginal_acquisition_func(new_m, Y, self.cur_min, sample_time=1000)
+            mut_pools.append([new_m, new_m_acq])
+        for mp in sorted(mut_pools, key=lambda x: x[1], reverse=True)[:n]:
+            self.append(mp[0])
+            mp[0].show_graph()
+        plt.show()
+        
 
 def write(pl_obj, path='pool'):
     pl_obj.elim()
@@ -47,21 +93,19 @@ def read(path='pool'):
     return pl_obj
 
 if __name__ == '__main__':
-    P = read('models/pool')
+    pooln = input("Enter the pool number:")
+    P = read('models/pool' + pooln)
+    P.mutate()
+    write(P, 'models/pool' + str(int(pooln) + 1))
+    exit()
     # P.mutate_layer_graph(0)
-    mut_pool = P.get_layer_graph(1).copy()
-    mut_pool.mut_skip()
-    mut_pool.mut_skip()
-    mut_pool.mut_skip()
-    mut_pool.finish()
 
     # print(netModel.K([P.get_layer_graph(1), P.get_layer_graph(0)], [P.get_layer_graph(1), P.get_layer_graph(0)]))
     # gt1 = P.get_layer_graph(3)
     # gt2 = P.get_layer_graph(4)
     # print(netModel.mean_cond([P.get_layer_graph(5)], [gt1,gt2], [0.1,0.2]))
     # print(netKernel.K([P.get_layer_graph(1), P.get_layer_graph(0)], [P.get_layer_graph(1), P.get_layer_graph(0)]))
-    X = list(list(zip(*(P.models)))[0])
-    Y = list(list(zip(*(P.models)))[1])
+    X, Y = P.get_training_data()
     netModel = NetModel(X)
     # for i in range(100):
     #     print(netModel.post_K(mut_pool, mut_pool, X))
@@ -72,4 +116,4 @@ if __name__ == '__main__':
     netModel.mcmc(Y)
     for x in range(10):
         pass
-        print(netModel.marginal_acquisition_func(mut_pool, Y, min(Y), sample_time=100))
+        print(netModel.marginal_acquisition_func(mut_pool, Y, min(Y), sample_time=1000))

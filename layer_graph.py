@@ -13,6 +13,9 @@ layers_type_num = 9
 layer_graph_count = 0
 layer_graph_table = []
 
+LAYERS_UPPER_BOUND = 20
+DEGREE_UPPER_BOUND = 2
+
 class Layer_graph(object):
     '''
     Don't need to speicify input layer
@@ -391,6 +394,7 @@ class Layer_graph(object):
         self.add_edge(new_node, edge[1])
 
     def mut_step(self):
+        # mut_op = random.choice([self.mut_remove_layer])
         mut_op = random.choice([self.mut_dup_path, self.mut_remove_layer,
             self.mut_dec_single, self.mut_inc_single,
             self.mut_swap_label, self.mut_wedge_layer,
