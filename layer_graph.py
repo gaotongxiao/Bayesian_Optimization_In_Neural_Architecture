@@ -204,12 +204,18 @@ class Layer_graph(object):
 
 
     def mut_dup_path(self):
-        stop_count = random.randint(1, self.layer_count-1)
+        # may cause cycle, reason unknown
+        # Need more thinking to control in/out degree
+        # I only controled in-degree
+        if self.layer_count >= LAYERS_UPPER_BOUND: 
+            return
+        stop_count = random.randint(1, min(self.layer_count-1, LAYERS_UPPER_BOUND - self.layer_count))
         while True:
             pick = random.randint(0, self.layer_count-1)#u1
             nodes  =list(self.get_nodes())
             node = nodes[pick]
-            if not (self._graph.node[node]['type'] == LAYERS.fc or self._graph.node[node]['type'] == LAYERS.ip or self._graph.node[node]['type'] == LAYERS.op or self._graph.node[node]['type'] == LAYERS.softmax):
+            # if not (self._graph.node[node]['type'] == LAYERS.fc or self._graph.node[node]['type'] == LAYERS.ip or self._graph.node[node]['type'] == LAYERS.op or self._graph.node[node]['type'] == LAYERS.softmax):
+            if self.get_node_attr(node) in self.process_layers and not self._graph.out_degree(node) >= DEGREE_UPPER_BOUND:
                 break
         head = node
         end = node
@@ -274,7 +280,9 @@ class Layer_graph(object):
         return [node_idx for node_idx in self.get_graph().nodes if is_processing_node(node_idx)]
 
     def mut_alt_single(self, portion):
-        random_node = self.get_node(random.choice(self.processing_nodes()))
+        while True:
+            random_node = self.get_node(random.choice(self.processing_nodes()))
+            if random_node['type'] in self.process_layers: break
         num_of_filters = random_node['num_of_filters']
         random_node['num_of_filters'] = int(num_of_filters*(1+portion))
 
@@ -398,6 +406,7 @@ class Layer_graph(object):
         self.add_edge(new_node, edge[1])
 
     def mut_step(self):
+        # mut_op = random.choice([self.mut_dup_path])
         mut_op = random.choice([self.mut_dup_path, self.mut_remove_layer,
             self.mut_dec_single, self.mut_inc_single,
             self.mut_swap_label, self.mut_wedge_layer,

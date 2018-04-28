@@ -28,6 +28,7 @@ class Pool(object):
                 ip = input("Input the accuracy, left empty if none:\n")
                 if ip != '':
                     self.models[idx][1] = -math.log(float(ip))
+                    self.cur_min = min(self.cur_min, self.models[idx][1])
     
     def append(self, graph, acc=None):
         if not acc is None:
@@ -43,6 +44,10 @@ class Pool(object):
                X.append(m[0])
                Y.append(m[1]) 
         return X, Y
+    
+    def get_prob(self, acc):
+        std = np.std(acc)
+        return np.exp(acc / std)
     
     def get_pred_data(self):
         x = []
@@ -64,15 +69,15 @@ class Pool(object):
 
     def mutate(self):
         self.timestep += 1
-        self.timestep = 16
-        N_mut = math.ceil(math.sqrt(self.timestep))
-        n = math.floor(math.sqrt(N_mut))
+        # N_mut = math.ceil(math.sqrt(self.timestep))
+        N_mut = 2 * self.timestep
+        n = math.floor(math.sqrt(self.timestep))
         res_graph = []
         mut_pools = []
         X, Y = self.get_training_data()
         netModel = NetModel(X)
         netModel.mcmc(Y)
-        for m in random.choices(X, k=N_mut):
+        for m in random.choices(X, k=N_mut, weights=self.get_prob(Y)):
             new_m = m.copy()
             new_m.mutate()
             new_m_acq = netModel.marginal_acquisition_func(new_m, Y, self.cur_min, sample_time=1000)
