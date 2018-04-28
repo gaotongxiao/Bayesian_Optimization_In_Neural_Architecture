@@ -89,10 +89,10 @@ class NetModel():
 
     def post_K(self, x1, x2, X=None):
         res = self.K(x1, x2) - self.K(x1, X).dot(np.linalg.inv(self.K_XX(X))).dot(self.K(X, x2))
-        return res
-        # w, v = np.linalg.eig(res)
-        # w = np.absolute(w)
-        # return w * v + 1e-10
+        # return res
+        w, v = np.linalg.eig(res)
+        w = np.absolute(w)
+        return w * v + 1e-10
 
     
     def post_mu(self, x, Y, X=None):

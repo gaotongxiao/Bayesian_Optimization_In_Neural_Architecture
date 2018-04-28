@@ -64,6 +64,7 @@ class Pool(object):
 
     def mutate(self):
         self.timestep += 1
+        self.timestep = 16
         N_mut = math.ceil(math.sqrt(self.timestep))
         n = math.floor(math.sqrt(N_mut))
         res_graph = []
@@ -76,6 +77,7 @@ class Pool(object):
             new_m.mutate()
             new_m_acq = netModel.marginal_acquisition_func(new_m, Y, self.cur_min, sample_time=1000)
             mut_pools.append([new_m, new_m_acq])
+        print(list(zip(*mut_pools))[1])
         for mp in sorted(mut_pools, key=lambda x: x[1], reverse=True)[:n]:
             self.append(mp[0])
             mp[0].show_graph()

@@ -315,25 +315,28 @@ class Layer_graph(object):
     def mut_skip(self):
         def random_pick():
             A = random.randint(1, self.layer_count-1)
-            while self.get_node_attr(A) not in self.process_layers:
+            i = 0
+            while self.get_node_attr(A) not in self.process_layers or self._graph.out_degree(A) >= DEGREE_UPPER_BOUND:
                 A = random.randint(1, self.layer_count-1)
+                i += 1
+                if i == 20: return
             B = random.randint(1, self.layer_count-1)
-            while self.get_node_attr(B) not in self.process_layers or B == A:
+            i = 0
+            while self.get_node_attr(B) not in self.process_layers or B == A or self._graph.in_degree(B) >= DEGREE_UPPER_BOUND:
                 B = random.randint(1, self.layer_count-1)
+                i += 1
+                if i == 20: return
             for n in self.get_nodes():
                 if A == n:
-                    break
+                    return [A, B]
                 if B == n:
-                    B = A
-                    A = n
-                    break
-            return [A, B]
+                    return [B, A]
         i = 0
         nodes = random_pick()
-        while self._graph.has_edge(*nodes) and i < 20:
+        while nodes is not None and self._graph.has_edge(*nodes) and i < 20:
             i += 1
             nodes = random_pick()
-        if i == 20: return
+        if i == 20 or nodes is None: return
         '''
         path = nx.shortest_path(self._graph, source=nodes[0], target=nodes[1])
         pool_counter = 0
@@ -371,6 +374,7 @@ class Layer_graph(object):
 
 
     def mut_wedge_layer(self):
+        if self.layer_count >= LAYERS_UPPER_BOUND: return
         edges = self._graph.edges()
         edge = random.choice(list(edges))
         while self.get_node_attr(edge[0]) not in self.process_layers and self.get_node_attr(edge[1]) not in self.process_layers:
@@ -394,7 +398,6 @@ class Layer_graph(object):
         self.add_edge(new_node, edge[1])
 
     def mut_step(self):
-        # mut_op = random.choice([self.mut_remove_layer])
         mut_op = random.choice([self.mut_dup_path, self.mut_remove_layer,
             self.mut_dec_single, self.mut_inc_single,
             self.mut_swap_label, self.mut_wedge_layer,
