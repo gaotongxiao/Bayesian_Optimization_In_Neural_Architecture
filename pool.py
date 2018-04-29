@@ -79,6 +79,7 @@ class Pool(object):
         netModel.mcmc(Y)
         for m in random.choices(X, k=N_mut, weights=self.get_prob(Y)):
             new_m = m.copy()
+            new_m.show_graph()
             new_m.mutate()
             new_m_acq = netModel.marginal_acquisition_func(new_m, Y, self.cur_min, sample_time=1000)
             mut_pools.append([new_m, new_m_acq])
@@ -102,9 +103,13 @@ def read(path='pool'):
 if __name__ == '__main__':
     pooln = input("Enter the pool number:")
     P = read('models/pool' + pooln)
+    # for m in P.models:
+    #     m[0].add_node(LAYERS.maxpool)
+    #     print(m[0].layer_count, list(m[0].get_nodes()))
+    # exit()
     P.mutate()
     write(P, 'models/pool' + str(int(pooln) + 1))
-    # exit()
+    exit()
     # P.mutate_layer_graph(0)
 
     # print(netModel.K([P.get_layer_graph(1), P.get_layer_graph(0)], [P.get_layer_graph(1), P.get_layer_graph(0)]))

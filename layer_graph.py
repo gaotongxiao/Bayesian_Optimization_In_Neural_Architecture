@@ -13,8 +13,8 @@ layers_type_num = 9
 layer_graph_count = 0
 layer_graph_table = []
 
-LAYERS_UPPER_BOUND = 20
-DEGREE_UPPER_BOUND = 2
+LAYERS_UPPER_BOUND = 200
+DEGREE_UPPER_BOUND = 20
 
 class Layer_graph(object):
     '''
@@ -40,9 +40,10 @@ class Layer_graph(object):
         Return:
             node number
         '''
-        self._graph.add_node(self.layer_count, type=type, num_of_filters=num_of_filters, layer_mass=0, stride=stride)
+        node_idx = max(self._graph.nodes) + 1
+        self._graph.add_node(node_idx, type=type, num_of_filters=num_of_filters, layer_mass=0, stride=stride)
         self.layer_count += 1
-        return self.layer_count - 1
+        return node_idx
 
     def add_edge(self, f, t):
         self._graph.add_edge(f, t)
@@ -176,7 +177,8 @@ class Layer_graph(object):
                 pool_cnt = np.zeros(len(parents))
                 i = 0
                 for parent in parents:
-                    if self._graph.node[parent]['type'] == LAYERS.maxpool or self._graph.node[parent]['type'] == LAYERS.avgpool:
+                    # if self._graph.node[parent]['type'] == LAYERS.maxpool or self._graph.node[parent]['type'] == LAYERS.avgpool:
+                    if self._graph.node[parent]['type'] in self.pool_layers:
                         pool_cnt[i] = topo_cnt[parent]+1
                     else:
                         pool_cnt[i] = topo_cnt[parent]
@@ -186,7 +188,8 @@ class Layer_graph(object):
                 for parent in parents:
                     if pool_cnt[i] < np.amax(pool_cnt):
                         #directly add ONE pool in this path (parent, pool) (pool, update_node)
-                        new_pool = self.add_node(LAYERS.maxpool)
+                        # new_pool = self.add_node(LAYERS.maxpool)
+                        new_pool = self.add_node(random.choice(self.pool_layers))
                         self.add_edge(parent, new_pool)
                         self.add_edge(new_pool, update_node)
                         self.remove_edge(parent, update_node)
@@ -312,8 +315,10 @@ class Layer_graph(object):
     def mut_inc_en_masse(self):
         self.mut_alt_en_masse(1/8)
 
-    def show_graph(self, node_size=1000):
+    def show_graph(self, title=None, node_size=1000):
         plt.figure()
+        if title is not None:
+            plt.title(title)
         labels = {}
         for n, t in self._graph.nodes(data=True):
             labels[n] = str(n) + '*' + str(t['type']) + ' ' + str(t['stride']) + ' ' + str(t['num_of_filters'])
@@ -322,16 +327,17 @@ class Layer_graph(object):
 
     def mut_skip(self):
         def random_pick():
-            A = random.randint(1, self.layer_count-1)
+            nodes = list(self.get_nodes())
             i = 0
+            A = random.choice(nodes)
             while self.get_node_attr(A) not in self.process_layers or self._graph.out_degree(A) >= DEGREE_UPPER_BOUND:
-                A = random.randint(1, self.layer_count-1)
+                A = random.choice(nodes)
                 i += 1
                 if i == 20: return
-            B = random.randint(1, self.layer_count-1)
+            B = random.choice(nodes)
             i = 0
             while self.get_node_attr(B) not in self.process_layers or B == A or self._graph.in_degree(B) >= DEGREE_UPPER_BOUND:
-                B = random.randint(1, self.layer_count-1)
+                B = random.choice(nodes)
                 i += 1
                 if i == 20: return
             for n in self.get_nodes():
@@ -363,9 +369,10 @@ class Layer_graph(object):
         '''
         Can I pick softmax or change to softmax?
         '''
-        node = random.randint(1, self.layer_count-1)
+        nodes = list(self.get_nodes())
+        node = random.choice(nodes)
         while self.get_node_attr(node) not in self.process_layers:
-            node = random.randint(1, self.layer_count-1)
+            node = random.choice(nodes)
         layers_list = list(LAYERS)
         type = random.choice(layers_list)
         while type not in self.process_layers:
@@ -406,7 +413,7 @@ class Layer_graph(object):
         self.add_edge(new_node, edge[1])
 
     def mut_step(self):
-        # mut_op = random.choice([self.mut_dup_path])
+        # mut_op = random.choice([self.mut_skip])
         mut_op = random.choice([self.mut_dup_path, self.mut_remove_layer,
             self.mut_dec_single, self.mut_inc_single,
             self.mut_swap_label, self.mut_wedge_layer,
@@ -415,12 +422,19 @@ class Layer_graph(object):
         print(mut_op.__name__)
         mut_op()
 
+
     def mutate(self):
         num_of_steps = np.random.choice([1, 2, 3, 4, 5], 1, p=[0.5, 0.25, 0.125, 0.075, 0.05])[0]
         print('num_step: ', num_of_steps)
-        for i in range(num_of_steps):
-            self.mut_step()
-        self.finish()
+        try:
+            for i in range(num_of_steps):
+                self.mut_step()
+                self.show_graph('mutate step ' + str(i))
+            self.finish()
+        except:
+            self.show_graph('Error')
+            plt.show()
+        plt.close('all')
 
     def copy(self):
         global layer_graph_count, layer_graph_table
