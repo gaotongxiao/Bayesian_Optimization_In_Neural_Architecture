@@ -87,7 +87,7 @@ class NetModel():
                 ret[i, j] = K_XX_single(i, j)
         # w, v = np.linalg.eig(ret)
         # w = np.absolute(w)
-        # return w * v + 1e-10
+        # return w * v# + 1e-10
         return ret
 
     def post_K(self, x1, x2, X=None):
@@ -163,8 +163,13 @@ class NetModel():
         # plt.show()
 
     def data_likelihood(self, Y, X=None):
-        print(self.K_XX(X))
-        return multivariate_normal.pdf(Y, self.mu(X), self.K_XX(X))
+        a = self.K_XX(X)
+        try:
+            ret = multivariate_normal.pdf(Y, self.mu(X), a)
+        except:
+            print(a)
+            exit()
+        return ret
 
     def post_dist_pdf(self, X_star, Y_star, Y, X=None):
         return multivariate_normal.pdf(Y_star, self.post_mu(X_star, Y, X), self.post_K(X_star, X_star, X))
