@@ -104,7 +104,7 @@ if __name__ == '__main__':
     P = read('models/pool' + pooln)
     P.mutate()
     write(P, 'models/pool' + str(int(pooln) + 1))
-    exit()
+    # exit()
     # P.mutate_layer_graph(0)
 
     # print(netModel.K([P.get_layer_graph(1), P.get_layer_graph(0)], [P.get_layer_graph(1), P.get_layer_graph(0)]))
