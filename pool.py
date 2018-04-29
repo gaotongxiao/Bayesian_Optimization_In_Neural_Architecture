@@ -46,6 +46,7 @@ class Pool(object):
         return X, Y
     
     def get_prob(self, acc):
+        acc = -np.array(acc)
         std = np.std(acc)
         return np.exp(acc / std)
     
@@ -70,7 +71,7 @@ class Pool(object):
     def mutate(self):
         self.timestep += 1
         # N_mut = math.ceil(math.sqrt(self.timestep))
-        N_mut = 2 * self.timestep
+        N_mut = self.timestep
         n = math.floor(math.sqrt(self.timestep))
         res_graph = []
         mut_pools = []
