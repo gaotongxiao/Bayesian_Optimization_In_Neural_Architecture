@@ -4,11 +4,11 @@ import matplotlib.pyplot as plt
 import random
 import numpy as np
 import copy
-LAYERS = Enum('layers', ('conv3', 'conv5', 'conv7', 'maxpool', 'avgpool', 'fc', 'ip', 'op', 'softmax'))
+LAYERS = Enum('layers', ('conv3', 'conv5', 'conv7', 'maxpool', 'avgpool', 'fc', 'ip', 'op', 'softmax', 'batchnorm', 'resnet'))
 from distance import get_distance, clear_distance
 import pickle
 
-layers_type_num = 9
+layers_type_num = 11
 
 layer_graph_count = 0
 layer_graph_table = []
@@ -40,7 +40,7 @@ class Layer_graph(object):
         Return:
             node number
         '''
-        node_idx = max(self._graph.nodes) + 1
+        node_idx = max(self._graph.nodes) + 1 if self.layer_count else 0
         self._graph.add_node(node_idx, type=type, num_of_filters=num_of_filters, layer_mass=0, stride=stride)
         self.layer_count += 1
         return node_idx
@@ -466,7 +466,7 @@ class Layer_graph(object):
     def _init_layers(self):
         self.conv_layers = [LAYERS.conv3, LAYERS.conv5, LAYERS.conv7]
         self.pool_layers = [LAYERS.maxpool, LAYERS.avgpool]
-        self.process_layers = [*self.conv_layers, *self.pool_layers, LAYERS.fc]
+        self.process_layers = [*self.conv_layers, *self.pool_layers, LAYERS.fc, LAYERS.batchnorm, LAYERS.resnet]
         self.decision_layers = [LAYERS.softmax]
         self.iop_layers = [LAYERS.ip, LAYERS.op]
 

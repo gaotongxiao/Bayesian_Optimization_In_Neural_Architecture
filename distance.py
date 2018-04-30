@@ -87,6 +87,10 @@ def get_lmm_matrix(g1, g2):
     M[LAYERS.conv3.value - 1, LAYERS.conv7.value - 1] = 0.3
     M[LAYERS.conv5.value - 1, LAYERS.conv7.value - 1] = 0.2
     M[LAYERS.maxpool.value - 1, LAYERS.avgpool.value - 1] = 0.25
+    M[LAYERS.conv3.value - 1, LAYERS.resnet.value - 1] = 0.4
+    M[LAYERS.conv5.value - 1, LAYERS.resnet.value - 1] = 0.45
+    M[LAYERS.conv7.value - 1, LAYERS.resnet.value - 1] = 0.5
+    M[LAYERS.batchnorm.value - 1, LAYERS.resnet.value - 1] = 0.4
     M = np.triu(M)
     M += M.T - np.diag(M.diagonal())
     #Construct penality matrix
