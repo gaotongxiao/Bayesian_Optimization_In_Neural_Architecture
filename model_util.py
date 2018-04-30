@@ -4,6 +4,7 @@ import emcee
 from scipy.stats import norm, multivariate_normal
 import random
 import matplotlib.pyplot as plt
+import math
 
 class NetModel():
     def __init__(self, X):
@@ -19,29 +20,29 @@ class NetModel():
         self.num_of_paras = 4
         self.burn_in_steps = 100
         self.production_chain_steps = 1000
-        self.distance_matrix_list = [] # tuple
+        # self.distance_matrix_list = [] # tuple
         self.X = X
         self.X_dim = len(X)
-        self.init_distance_matrix(X)
+        # self.init_distance_matrix(X)
         
-    def init_distance_matrix(self, X1, X2=None):
-        if X2 == None:
-            X2 = X1
-        if not isinstance(X1, list):
-            X1 = [X1]
-        if not isinstance(X2, list):
-            X2 = [X2]
-        n_1 = len(X1)
-        n_2 = len(X2)
-        distance_matrix = np.zeros((n_1, n_2))
-        distance_bar_matrix = np.zeros((n_1, n_2))
-        for k in range(self.num_beta):
-            for i in range(n_1):
-                for j in range(n_2):
-                        d, d_bar = get_distance(X1[i], X2[j], self.v_str[k])
-                        distance_matrix[i, j] = d
-                        distance_bar_matrix[i, j] = d_bar
-            self.distance_matrix_list.append((distance_matrix, distance_bar_matrix))
+    # def init_distance_matrix(self, X1, X2=None):
+    #     if X2 == None:
+    #         X2 = X1
+    #     if not isinstance(X1, list):
+    #         X1 = [X1]
+    #     if not isinstance(X2, list):
+    #         X2 = [X2]
+    #     n_1 = len(X1)
+    #     n_2 = len(X2)
+    #     distance_matrix = np.zeros((n_1, n_2))
+    #     distance_bar_matrix = np.zeros((n_1, n_2))
+    #     for k in range(self.num_beta):
+    #         for i in range(n_1):
+    #             for j in range(n_2):
+    #                     d, d_bar = get_distance(X1[i], X2[j], self.v_str[k])
+    #                     distance_matrix[i, j] = d
+    #                     distance_bar_matrix[i, j] = d_bar
+    #         self.distance_matrix_list.append((distance_matrix, distance_bar_matrix))
 
     def mu(self, X, constant=0):
         if X == None:
@@ -73,25 +74,30 @@ class NetModel():
 
         if not X == None:
             return self.K(X, X)
+        else :
+            return self.K(self.X, self.X)
 
-        def K_XX_single(xi, xj):
-            first_term = self.alpha*np.exp(sum([-self.betas[i]*self.distance_matrix_list[i][0][xi, xj] for i in range(self.num_beta)]))
-            second_term = self.alpha_bar*np.exp(sum([-self.beta_bars[i]*self.distance_matrix_list[i][1][xi, xj]**2 for i in range(self.num_beta)]))
-            return first_term + second_term
+        # def K_XX_single(xi, xj):
+        #     first_term = self.alpha*np.exp(sum([-self.betas[i]*self.distance_matrix_list[i][0][xi, xj] for i in range(self.num_beta)]))
+        #     second_term = self.alpha_bar*np.exp(sum([-self.beta_bars[i]*self.distance_matrix_list[i][1][xi, xj]**2 for i in range(self.num_beta)]))
+        #     return first_term + second_term
 
-        ret = np.zeros_like(self.distance_matrix_list[0][0])
-        n = np.shape(ret)[0]
-        for i in range(n):
-            for j in range(n):
-                ret[i, j] = K_XX_single(i, j)
-        return ret
+        # ret = np.zeros_like(self.distance_matrix_list[0][0])
+        # n = np.shape(ret)[0]
+        # for i in range(n):
+        #     for j in range(n):
+        #         ret[i, j] = K_XX_single(i, j)
+        # # w, v = np.linalg.eig(ret)
+        # # w = np.absolute(w)
+        # # return w * v# + 1e-10
+        # return ret
 
     def post_K(self, x1, x2, X=None):
         res = self.K(x1, x2) - self.K(x1, X).dot(np.linalg.inv(self.K_XX(X))).dot(self.K(X, x2))
-        return res
-        # w, v = np.linalg.eig(res)
-        # w = np.absolute(w)
-        # return w * v + 1e-10
+        # return res
+        w, v = np.linalg.eig(res)
+        w = np.absolute(w)
+        return w * v + 1e-10
 
     
     def post_mu(self, x, Y, X=None):
@@ -111,15 +117,20 @@ class NetModel():
             return
         res = 0
         for _ in range(sample_time):
-            f = random.randint(0, self.num_of_paras * 2 * (self.production_chain_steps + self.burn_in_steps)-1)
-            while self.sampler.flatlnprobability[f] == -np.inf:
+            while True:
                 f = random.randint(0, self.num_of_paras * 2 * (self.production_chain_steps + self.burn_in_steps)-1)
-            p = self.sampler.flatchain[f]
-            self.alpha = p[0]/(p[0]+p[1])
-            self.alpha_bar = p[1]/(p[0]+p[1])
-            self.betas = [p[2]]
-            self.beta_bars = [p[3]]
-            res += self.acquisition_func(x, Y, cur_min, X)
+                while self.sampler.flatlnprobability[f] == -np.inf:
+                    f = random.randint(0, self.num_of_paras * 2 * (self.production_chain_steps + self.burn_in_steps)-1)
+                p = self.sampler.flatchain[f]
+                self.alpha = p[0]/(p[0]+p[1])
+                self.alpha_bar = p[1]/(p[0]+p[1])
+                self.betas = [p[2]]
+                self.beta_bars = [p[3]]
+                func_value = self.acquisition_func(x, Y, cur_min, X)
+                if math.isnan(func_value):
+                    continue
+                res += func_value
+                break
         return res / sample_time
 
     def mcmc(self, Y, X=None, burn_in_steps=100, production_chain_steps=1000):
@@ -154,7 +165,41 @@ class NetModel():
         # plt.show()
 
     def data_likelihood(self, Y, X=None):
-        return multivariate_normal.pdf(Y, self.mu(X), self.K_XX(X))
+
+        def isPD(B):
+            """Returns true when input is positive-definite, via Cholesky"""
+            try:
+                _ = np.linalg.cholesky(B)
+                return True
+            except np.linalg.LinAlgError:
+                return False
+        def nearestPD(A):
+            B = (A + A.T) / 2
+            _, s, V = np.linalg.svd(B)
+
+            H = np.dot(V.T, np.dot(np.diag(s), V))
+
+            A2 = (B + H) / 2
+
+            A3 = (A2 + A2.T) / 2
+
+            if isPD(A3):
+                return A3
+
+            spacing = np.spacing(np.linalg.norm(A))
+            I = np.eye(A.shape[0])
+            k = 1
+            while not isPD(A3):
+                mineig = np.min(np.real(np.linalg.eigvals(A3)))
+                A3 += I * (-mineig * k**2 + spacing)
+                k += 1
+
+            return A3
+
+        a = nearestPD(self.K_XX(X))
+        ret = multivariate_normal.pdf(Y, self.mu(X), a, True)
+        return ret
+
 
     def post_dist_pdf(self, X_star, Y_star, Y, X=None):
         return multivariate_normal.pdf(Y_star, self.post_mu(X_star, Y, X), self.post_K(X_star, X_star, X))

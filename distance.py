@@ -87,6 +87,10 @@ def get_lmm_matrix(g1, g2):
     M[LAYERS.conv3.value - 1, LAYERS.conv7.value - 1] = 0.3
     M[LAYERS.conv5.value - 1, LAYERS.conv7.value - 1] = 0.2
     M[LAYERS.maxpool.value - 1, LAYERS.avgpool.value - 1] = 0.25
+    M[LAYERS.conv3.value - 1, LAYERS.resnet.value - 1] = 0.4
+    M[LAYERS.conv5.value - 1, LAYERS.resnet.value - 1] = 0.45
+    M[LAYERS.conv7.value - 1, LAYERS.resnet.value - 1] = 0.5
+    M[LAYERS.batchnorm.value - 1, LAYERS.resnet.value - 1] = 0.4
     M = np.triu(M)
     M += M.T - np.diag(M.diagonal())
     #Construct penality matrix
@@ -110,14 +114,14 @@ def get_str_matrix(g1, g2):
     pl_2 = get_path_length(g2)
     for c1, n1 in enumerate(g1.get_nodes()):
         for c2, n2 in enumerate(g2.get_nodes()):
-            C[c1, c2] = abs(pl_1[c1] - pl_2[c2])
+            C[c1, c2] = abs(pl_1[n1] - pl_2[n2])
             for sl in special_layers:
                 a = 0
                 b = 0
                 if g1.get_node_attr(n1) in sl:
-                    a = pl_1[c1]
+                    a = pl_1[n1]
                 if g2.get_node_attr(n2) in sl:
-                    b = pl_2[c2]
+                    b = pl_2[n2]
                 C[c1, c2] += abs(a - b)
     C /= 1 + len(special_layers)
     return C
