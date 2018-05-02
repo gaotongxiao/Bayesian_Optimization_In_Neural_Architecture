@@ -153,7 +153,7 @@ class Layer_graph(object):
                 pool_cnt = np.zeros(len(parents))
                 i = 0
                 for parent in parents:
-                    if self._graph.node[parent]['type'] == LAYERS.maxpool or self._graph.node[parent]['type'] == LAYERS.avgpool:
+                    if self._graph.node[parent]['type'] in self.pool_layers or (self._graph.node[parent]['type'] in self.conv_layers and self._graph.node[parent]['stride'] == 2):
                         pool_cnt[i] = topo_cnt[parent]+1
                     else:
                         pool_cnt[i] = topo_cnt[parent]
@@ -178,7 +178,7 @@ class Layer_graph(object):
                 i = 0
                 for parent in parents:
                     # if self._graph.node[parent]['type'] == LAYERS.maxpool or self._graph.node[parent]['type'] == LAYERS.avgpool:
-                    if self._graph.node[parent]['type'] in self.pool_layers:
+                    if self._graph.node[parent]['type'] in self.pool_layers or (self._graph.node[parent]['type'] in self.conv_layers and self._graph.node[parent]['stride'] == 2):
                         pool_cnt[i] = topo_cnt[parent]+1
                     else:
                         pool_cnt[i] = topo_cnt[parent]
@@ -426,6 +426,11 @@ class Layer_graph(object):
     def mutate(self):
         num_of_steps = np.random.choice([1, 2, 3, 4, 5], 1, p=[0.5, 0.25, 0.125, 0.075, 0.05])[0]
         print('num_step: ', num_of_steps)
+        for i in range(num_of_steps):
+            self.mut_step()
+            self.show_graph('mutate step ' + str(i))
+        self.finish()
+        '''
         try:
             for i in range(num_of_steps):
                 self.mut_step()
@@ -434,6 +439,7 @@ class Layer_graph(object):
         except:
             self.show_graph('Error')
             plt.show()
+        '''
         plt.close('all')
 
     def copy(self):
