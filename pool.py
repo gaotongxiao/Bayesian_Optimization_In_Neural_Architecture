@@ -104,29 +104,5 @@ def read(path='pool'):
 if __name__ == '__main__':
     pooln = input("Enter the pool number:")
     P = read('models/pool' + pooln)
-    # for m in P.models:
-    #     m[0].add_node(LAYERS.maxpool)
-    #     print(m[0].layer_count, list(m[0].get_nodes()))
-    # exit()
     P.mutate()
     write(P, 'models/pool' + str(int(pooln) + 1))
-    exit()
-    # P.mutate_layer_graph(0)
-
-    # print(netModel.K([P.get_layer_graph(1), P.get_layer_graph(0)], [P.get_layer_graph(1), P.get_layer_graph(0)]))
-    # gt1 = P.get_layer_graph(3)
-    # gt2 = P.get_layer_graph(4)
-    # print(netModel.mean_cond([P.get_layer_graph(5)], [gt1,gt2], [0.1,0.2]))
-    # print(netKernel.K([P.get_layer_graph(1), P.get_layer_graph(0)], [P.get_layer_graph(1), P.get_layer_graph(0)]))
-    X, Y = P.get_training_data()
-    netModel = NetModel(X)
-    # for i in range(100):
-    #     print(netModel.post_K(mut_pool, mut_pool, X))
-    #     mut_pool.mutate()
-    # print(netModel.post_K(mut_pool, mut_pool, X))
-    # print(netModel.acquisition_func(mut_pool, X, Y, max(Y)))
-    # print(netModel.post_dist(mut_pool, 0.9, X, Y))
-    netModel.mcmc(Y)
-    for x in range(10):
-        pass
-        print(netModel.marginal_acquisition_func(mut_pool, Y, min(Y), sample_time=1000))
